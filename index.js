@@ -11,7 +11,7 @@ const adminRoutes = require('./app/routes/admin.routes');
 const authRoutes = require('./app/routes/auth.router'); 
 const auth = require('./app/middlewares/auth.middleware');
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 2222;
 const app = express();
 
 app.set('view engine', 'ejs');
