@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/head') %>
+
+<style>
+    :root {
+        --bs-primary: #36A692;
+        --bs-primary-rgb: 54, 166, 146;
+    }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #e8f5f2 0%, #f8f9fa 100%);
+        color: #333;
+        min-height: 100vh;
+    }
+
+    .btn-primary {
+        background-color: var(--bs-primary);
+        border-color: var(--bs-primary);
+        color: #fff;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus,
+    .btn-primary:active {
+        background-color: #2a8a77;
+        border-color: #2a8a77;
+        transform: translateY(-2px);
+    }
+
+    .btn-primary:disabled {
+        background-color: #9bd3c9;
+        border-color: #9bd3c9;
+        cursor: not-allowed;
+    }
+
+    .text-primary {
+        color: var(--bs-primary) !important;
+    }
+
+    .login-card {
+        background: #fff;
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .login-card:hover {
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    .form-control {
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .form-control:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.2rem rgba(54, 166, 146, 0.25);
+    }
+
+    .alert {
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .logo-text {
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+</style>
+
+<body>
+    <div class="container-fluid d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+        <div class="col-11 col-sm-8 col-md-6 col-lg-4"> 
+            <div id="message-div" class="mb-3"></div> 
+            <div class="login-card p-5">
+                <div class="text-center mb-4">
+                    <h3 class="text-primary logo-text">
+                        <i class="fa fa-user-edit me-2"></i> My Lab
+                    </h3>
+                </div>
+
+                <form id="login-form" novalidate>
+                    <div class="form-floating mb-3">
+                        <input type="email" name="email" class="form-control" id="floatingInput"
+                            placeholder="name@example.com" required>
+                        <label for="floatingInput">Email address</label>
+                        <div class="invalid-feedback">Please enter a valid email.</div>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <input type="password" name="password" class="form-control" id="floatingPassword"
+                            placeholder="Password" required>
+                        <label for="floatingPassword">Password</label>
+                        <div class="invalid-feedback">Please enter your password.</div>
+                    </div>
+
+                    <button type="submit" id="login-button" class="btn btn-primary py-3 w-100 mb-3">
+                        Sign In
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const loginForm = document.getElementById("login-form");
+            const emailInput = document.getElementById("floatingInput");
+            const passwordInput = document.getElementById("floatingPassword");
+            const messageDiv = document.getElementById("message-div");
+            const loginButton = document.getElementById("login-button");
+
+            loginForm.addEventListener("submit", async (e) => {
+                e.preventDefault(); 
+                messageDiv.innerHTML = ""; 
+                const email = emailInput.value.trim();
+                const password = passwordInput.value.trim();
+
+                if (!email || !password) {
+                    showMessage("Please enter both email and password.", "danger");
+                    return;
+                } 
+                loginButton.disabled = true;
+                loginButton.innerHTML = `<span class="spinner-border spinner-border-sm" role="status"></span> Signing In...`;
+
+                try {
+                    const response = await fetch('/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    }); 
+                    const data = await response.json(); 
+                    if (response.ok && data.status === true) {
+                        showMessage("Login successful! Redirecting...", "success"); 
+                        localStorage.setItem("adminToken", data.token); 
+                        setTimeout(() => {
+                            window.location.href = data.redirectUrl;
+                        }, 1000);
+                    } else {
+                        showMessage(data.message || "Invalid credentials.", "danger");
+                        loginButton.disabled = false;
+                        loginButton.innerHTML = "Sign In";
+                    }
+                } catch (error) {
+                    console.error("Login Error:", error);
+                    showMessage("Network error. Please try again.", "danger");
+                    loginButton.disabled = false;
+                    loginButton.innerHTML = "Sign In";
+                }
+            });
+
+            function showMessage(msg, type) {
+                messageDiv.innerHTML = `<div class="alert alert-${type} text-center">${msg}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

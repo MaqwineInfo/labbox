@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-startbar="dark" data-bs-theme="light">
+
+<head>
+    <%- include('../partials/head') %>
+</head>
+
+<body>
+
+    <%- include('../partials/topbar') %>
+    <%- include('../partials/sidebar') %>
+
+    <div class="page-wrapper">
+        <div class="page-content">
+            <div class="container-fluid">
+
+                <!-- Page Title & Add Button -->
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
+                            <h4 class="page-title">Laboratory</h4>
+                            <button type="button" class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#addLaboratoryModal">
+                                Add Laboratory
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error/Success Messages -->
+                <div class="row">
+                    <div class="col-12">
+                        <% if (typeof error !== 'undefined' && error) { %>
+                            <div class="alert alert-danger"><%= error %></div>
+                        <% } %>
+                        <% if (typeof success !== 'undefined' && success) { %>
+                            <div class="alert alert-success"><%= success %></div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Laboratory Table -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">Laboratory List</h4>
+                            </div>
+                            <div class="card-body">
+                                
+                                <!-- Filters and Search -->
+                                <div class="d-flex flex-wrap justify-content-between mb-3">
+                                    <form class="d-flex" id="searchForm" action="/admin/laboratory" method="GET">
+                                        <input class="form-control me-2" type="search" placeholder="Search by Name" name="name" value="<%= typeof query !== 'undefined' ? query.name : '' %>">
+                                        <button class="btn btn-outline-primary" type="submit">Search</button>
+                                        <a href="/admin/laboratory" class="btn btn-outline-secondary ms-2">Clear</a>
+                                    </form>
+                                    
+                                    <div class="ms-auto">
+                                        <div class="dropdown">
+                                            <button class="btn btn-primary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Filter
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                                                <li><a class="dropdown-item" href="/admin/laboratory?status=all">All</a></li>
+                                                <li><a class="dropdown-item" href="/admin/laboratory?status=1">Active</a></li>
+                                                <li><a class="dropdown-item" href="/admin/laboratory?status=0">Inactive</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Table -->
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover" id="laboratoryTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Logo</th>
+                                                <th>Laboratory Name</th>
+                                                <th>Owner Name</th>
+                                                <th>Contact no.1</th>
+                                                <th>City</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                                <th>View</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (typeof laboratory !== 'undefined' && laboratory.length > 0) { %>
+                                                <% laboratory.forEach(lab => { %>
+                                                    <tr>
+                                                        <td>
+                                                            <img src="<%= lab.logo || 'https://placehold.co/50x50/eee/31343c?text=Logo' %>" style="border-radius:50%" width="50px" height="50px" alt="<%= lab.name %>">
+                                                        </td>
+                                                        <td><%= lab.name %></td>
+                                                        <td><%= lab.owner %></td>
+                                                        <td><%= lab.contact_1 %></td>
+                                                        <td><%= lab.city %></td>
+                                                        <td>
+                                                            <% if (lab.status == 1) { %>
+                                                                <span class="badge bg-success-subtle text-success">Active</span>
+                                                            <% } else { %>
+                                                                <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                                                            <% } %>
+                                                        </td>
+                                                        <td>
+                                                            <div class="dropdown">
+                                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                    Action
+                                                                </button>
+                                                                <ul class="dropdown-menu">
+                                                                    <li>
+                                                                        <a class="dropdown-item edit-laboratory-btn" href="#" 
+                                                                           data-bs-toggle="modal" 
+                                                                           data-bs-target="#editLaboratoryModal"
+                                                                           data-id="<%= lab._id %>"
+                                                                           data-logo="<%= lab.logo %>"
+                                                                           data-name="<%= lab.name %>"
+                                                                           data-owner="<%= lab.owner %>"
+                                                                           data-contact_1="<%= lab.contact_1 %>"
+                                                                           data-contact_2="<%= lab.contact_2 %>"
+                                                                           data-email="<%= lab.email %>"
+                                                                           data-address_1="<%= lab.address_1 %>"
+                                                                           data-address_2="<%= lab.address_2 %>"
+                                                                           data-city="<%= lab.city %>"
+                                                                           data-state="<%= lab.state %>"
+                                                                           data-zipcode="<%= lab.zipcode %>">
+                                                                            Edit
+                                                                        </a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <% if(lab.status == 1) { %>
+                                                                            <a class="dropdown-item action-btn" href="#" data-id="<%= lab._id %>" data-action="inactive">Inactive</a>
+                                                                        <% } else { %>
+                                                                            <a class="dropdown-item action-btn" href="#" data-id="<%= lab._id %>" data-action="active">Active</a>
+                                                                        <% } %>
+                                                                    </li>
+                                                                    <li><hr class="dropdown-divider"></li>
+                                                                    <li>
+                                                                        <a class="dropdown-item text-danger action-btn" href="#" data-id="<%= lab._id %>" data-action="delete">Delete</a>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <a href="/admin/laboratory/view/<%= lab._id %>"   >
+                                                                <i class="btn-lg iconoir-eye"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="8" class="text-center">No laboratories found.</td>
+                                                </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- Pagination (Add if needed) -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- container-fluid -->
+
+            <!-- Appearance Offcanvas -->
+            <div class="offcanvas offcanvas-end" tabindex="-1" id="Appearance" aria-labelledby="AppearanceLabel">
+                <div class="offcanvas-header border-bottom justify-content-between">
+                    <h5 class="m-0 font-14" id="AppearanceLabel">Appearance</h5>
+                    <button type="button" class="btn-close text-reset p-0 m-0 align-self-center" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body"></div>
+            </div>
+
+        </div>
+        <!-- end page content -->
+    </div>
+    <!-- end page-wrapper -->
+
+    <!-- Add Laboratory Modal -->
+    <div class="modal fade" id="addLaboratoryModal" tabindex="-1" aria-labelledby="addLaboratoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addLaboratoryModalLabel">Add Laboratory</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <hr class="m-0">
+                <form id="addLaboratoryForm" method="POST" action="/admin/laboratory/add" enctype="multipart/form-data">
+                    <div class="modal-body row">
+                        <div class="mb-3">
+                            <label for="LaboratoryLogo" class="form-label">Laboratory Logo</label>
+                            <input type="file" class="form-control" id="LaboratoryLogo" name="logo">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="LaboratoryName" class="form-label">Laboratory Name</label>
+                                <input type="text" class="form-control" id="LaboratoryName" name="name" placeholder="Enter Laboratory name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="contact_1" class="form-label">First Contact Number</label>
+                                <input type="tel" class="form-control" id="contact_1" name="contact_1" placeholder="Enter contact number" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="address_1" class="form-label">Address 1</label>
+                                <textarea class="form-control" id="address_1" name="address_1" placeholder="Enter current address" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="state" class="form-label">State</label>
+                                <select class="form-control" id="state" name="state" required>
+                                    <option value="" hidden>Select state</option>
+                                    <option value="Gujarat">Gujarat</option>
+                                    <option value="Maharashtra">Maharashtra</option>
+                                    <option value="Rajasthan">Rajasthan</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="owner" class="form-label">Owner Name</label>
+                                <input type="text" class="form-control" id="owner" name="owner" placeholder="Enter owner name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="contact_2" class="form-label">Second Contact Number</label>
+                                <input type="tel" class="form-control" id="contact_2" name="contact_2" placeholder="Enter contact number (optional)">
+                            </div>
+                            <div class="mb-3">
+                                <label for="zipcode" class="form-label">Zipcode</label>
+                                <input type="text" class="form-control" id="zipcode" name="zipcode" placeholder="Enter area zipcode" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="address_2" class="form-label">Address 2</label>
+                                <textarea class="form-control" id="address_2" name="address_2" placeholder="Enter address (optional)"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="city" class="form-label">City</label>
+                                <select class="form-control" id="city" name="city" required>
+                                    <option value="" hidden>Select city</option>
+                                    <option value="Surat">Surat</option>
+                                    <option value="Ahmedabad">Ahmedabad</option>
+                                    <option value="Vadodara">Vadodara</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="m-0">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Laboratory</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Laboratory Modal -->
+    <div class="modal fade" id="editLaboratoryModal" tabindex="-1" aria-labelledby="editLaboratoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editLaboratoryModalLabel">Edit Laboratory</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <hr class="m-0">
+                <form id="editLaboratoryForm" method="POST" enctype="multipart/form-data">
+                    <div class="modal-body row">
+                        <input type="hidden" id="editLaboratoryId" name="id">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-center align-items-center mb-2">
+                                <img id="editLaboratoryLogoPreview" src="" alt="Logo Preview" style="height: 100px; width: 100px; border-radius: 50%; display: none;">
+                            </div>
+                            <label for="editLaboratoryLogo" class="form-label">Change Laboratory Logo</label>
+                            <input type="file" class="form-control" id="editLaboratoryLogo" name="logo">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editLaboratoryName" class="form-label">Laboratory Name</label>
+                                <input type="text" class="form-control" id="editLaboratoryName" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editContact_1" class="form-label">Contact No.1</label>
+                                <input type="tel" class="form-control" id="editContact_1" name="contact_1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="editEmail" name="email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editAddress_1" class="form-label">Address (current)</label>
+                                <textarea class="form-control" id="editAddress_1" name="address_1" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editState" class="form-label">State</label>
+                                <select name="state" class="form-control" id="editState" required>
+                                    <option value="Gujarat">Gujarat</option>
+                                    <option value="Maharashtra">Maharashtra</option>
+                                    <option value="Rajasthan">Rajasthan</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editOwner" class="form-label">Laboratory Owner</label>
+                                <input type="text" class="form-control" id="editOwner" name="owner" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editContact_2" class="form-label">Contact No.2</label>
+                                <input type="tel" class="form-control" id="editContact_2" name="contact_2">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editZipcode" class="form-label">Zipcode</label>
+                                <input type="text" class="form-control" id="editZipcode" name="zipcode" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editAddress_2" class="form-label">Address (Optional)</label>
+                                <textarea class="form-control" id="editAddress_2" name="address_2"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCity" class="form-label">City</label>
+                                <select class="form-control" id="editCity" name="city" required>
+                                    <option value="Surat">Surat</option>
+                                    <option value="Ahmedabad">Ahmedabad</option>
+                                    <option value="Vadodara">Vadodara</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="m-0">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete/Action Confirmation Modal -->
+    <div class="modal fade" id="actionModal" tabindex="-1" role="dialog" aria-labelledby="actionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <h5 class="modal-title justify-content-center" id="actionModalLabel">
+                        <i class="iconoir-warning-circle-outline" style="font-size: 3rem; color: #f1416c;"></i>
+                    </h5><br>
+                    <h6 id="confirmationMessage">Are you sure?</h6>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmAction">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/scripts') %>
+
+    <!-- Page Specific Scripts -->
+   <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        
+            // 1. Handle Edit Modal
+            const editModal = document.getElementById('editLaboratoryModal');
+            editModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget; 
+                
+                const lab = {
+                    id: button.getAttribute('data-id'),
+                    logo: button.getAttribute('data-logo'),
+                    name: button.getAttribute('data-name'),
+                    owner: button.getAttribute('data-owner'),
+                    contact_1: button.getAttribute('data-contact_1'),
+                    contact_2: button.getAttribute('data-contact_2'),
+                    email: button.getAttribute('data-email'),
+                    address_1: button.getAttribute('data-address_1'),
+                    address_2: button.getAttribute('data-address_2'),
+                    city: button.getAttribute('data-city'),
+                    state: button.getAttribute('data-state'),
+                    zipcode: button.getAttribute('data-zipcode')
+                };
+
+                const modal = this;
+                modal.querySelector('#editLaboratoryId').value = lab.id;
+                modal.querySelector('#editLaboratoryName').value = lab.name;
+                modal.querySelector('#editOwner').value = lab.owner;
+                modal.querySelector('#editContact_1').value = lab.contact_1;
+                modal.querySelector('#editContact_2').value = lab.contact_2 || '';
+                modal.querySelector('#editEmail').value = lab.email;
+                modal.querySelector('#editAddress_1').value = lab.address_1;
+                modal.querySelector('#editAddress_2').value = lab.address_2 || '';
+                modal.querySelector('#editCity').value = lab.city;
+                modal.querySelector('#editState').value = lab.state;
+                modal.querySelector('#editZipcode').value = lab.zipcode;
+                
+                // Set form action
+                modal.querySelector('#editLaboratoryForm').action = `/admin/laboratory/update/${lab.id}`;
+                
+                // Update the image preview
+                const preview = modal.querySelector('#editLaboratoryLogoPreview');
+                if (lab.logo && lab.logo !== 'null') {
+                    preview.src = lab.logo;
+                    preview.style.display = 'block';
+                } else {
+                    preview.src = '';
+                    preview.style.display = 'none';
+                }
+            });
+
+            // 2. Handle Action Confirmation Modal (Delete, Active, Inactive)
+            const actionModal = new bootstrap.Modal(document.getElementById('actionModal'));
+            const confirmActionBtn = document.getElementById('confirmAction');
+            const confirmationMessage = document.getElementById('confirmationMessage');
+            let actionUrl = '';
+            let httpMethod = 'POST';
+
+            document.querySelectorAll('.action-btn').forEach(button => {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const labId = this.getAttribute('data-id');
+                    const action = this.getAttribute('data-action');
+
+                    if (action === 'delete') {
+                        confirmationMessage.innerText = 'Are you sure you want to delete this laboratory?';
+                        actionUrl = `/admin/laboratory/delete/${labId}`;
+                        httpMethod = 'DELETE';
+                    } else if (action === 'inactive') {
+                        confirmationMessage.innerText = 'Are you sure you want to set this laboratory to Inactive?';
+                        actionUrl = `/admin/laboratory/status/${labId}`;
+                        httpMethod = 'PATCH'; // <-- SUDHARO: POST to PATCH
+                    } else if (action === 'active') {
+                        confirmationMessage.innerText = 'Are you sure you want to set this laboratory to Active?';
+                        actionUrl = `/admin/laboratory/status/${labId}`;
+                        httpMethod = 'PATCH'; // <-- SUDHARO: POST to PATCH
+                    }
+                    
+                    actionModal.show();
+                });
+            });
+
+            // Handle the confirmation click
+            confirmActionBtn.addEventListener('click', async function () {
+                if (actionUrl) {
+                    try {
+                        const response = await fetch(actionUrl, {
+                            method: httpMethod,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + localStorage.getItem('authToken') // <-- SUDHARO: Token Add Karyu
+                            }
+                        });
+
+                        if (response.ok) {
+                            actionModal.hide();
+                            location.reload(); 
+                        } else {
+                            const errorData = await response.json(); // <-- Error message read karo
+                            alert(errorData.message || 'Failed to perform action.');
+                            actionModal.hide();
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('An error occurred.');
+                    }
+                }
+            });
+
+            // 3. Handle Form Submissions (Add/Edit) with Fetch
+            handleFormSubmit('addLaboratoryForm', '/admin/laboratory/add', 'POST');
+            handleFormSubmit('editLaboratoryForm', null, 'POST');
+
+            function handleFormSubmit(formId, defaultAction, method) {
+                const form = document.getElementById(formId);
+                form.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    submitButton.disabled = true;
+
+                    const action = form.action || defaultAction;
+                    const formData = new FormData(form);
+
+                    try {
+                        const response = await fetch(action, {
+                            method: method,
+                            body: formData,
+                            headers: {
+                                'Authorization': 'Bearer ' + localStorage.getItem('authToken') // <-- SUDHARO: Token Add Karyu
+                            }
+                        });
+
+                        if (response.ok) {
+                            const modalId = form.closest('.modal').id;
+                            const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+                            modal.hide();
+                            location.reload();
+                        } else {
+                            const errorData = await response.json();
+                            alert('Error: ' + (errorData.message || 'Failed to submit.'));
+                        }
+                    } catch (error) {
+                        console.error('Form submission error:', error);
+                        alert('An error occurred.');
+                    } finally {
+                        submitButton.disabled = false;
+                    }
+                });
+            }
+
+        });
+    </script>
+
+</body>
+</html>

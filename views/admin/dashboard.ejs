@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-startbar="dark" data-bs-theme="light">
+
+<head>
+    <%- include('../partials/head') %>
+</head>
+
+<body>
+
+    <%- include('../partials/topbar') %>
+
+        <%- include('../partials/sidebar') %>
+
+            <div class="page-wrapper">
+
+                <div class="page-content">
+                    <div class="container-fluid">
+
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
+                                    <h4 class="page-title">Dashboard</h4>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row justify-content-center">
+
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card bg-corner-img">
+                                    <div class="card-body">
+                                        <div class="row d-flex justify-content-center">
+                                            <div class="col-9">
+                                                <a class="text-muted text-uppercase mb-0 fw-normal fs-13"
+                                                    href="/admin/categories">
+                                                    Total Category</a>
+                                                <h4 class="mt-1 mb-0 fw-medium" id="stats-categories">...</h4>
+                                            </div>
+                                            <div class="col-3 align-self-center">
+                                                <div
+                                                    class="d-flex justify-content-center align-items-center thumb-md border-dashed border-primary rounded mx-auto">
+                                                    <i
+                                                        class="iconoir-dollar-circle fs-22 align-self-center mb-0 text-primary"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card bg-corner-img">
+                                    <div class="card-body">
+                                        <div class="row d-flex justify-content-center">
+                                            <div class="col-9">
+                                                <a class="text-muted text-uppercase mb-0 fw-normal fs-13"
+                                                    href="/admin/packages">
+                                                    Total Packages</a>
+                                                <h4 class="mt-1 mb-0 fw-medium" id="stats-packages">...</h4>
+                                            </div>
+                                            <div class="col-3 align-self-center">
+                                                <div
+                                                    class="d-flex justify-content-center align-items-center thumb-md border-dashed border-info rounded mx-auto">
+                                                    <i class="iconoir-cart fs-22 align-self-center mb-0 text-info"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card bg-corner-img">
+                                    <div class="card-body">
+                                        <div class="row d-flex justify-content-center">
+                                            <div class="col-9">
+                                                <a class="text-muted text-uppercase mb-0 fw-normal fs-13"
+                                                    href="/admin/packages">
+                                                    Total Sub-Packages</a>
+                                                <h4 class="mt-1 mb-0 fw-medium" id="stats-subpackages">...</h4>
+                                            </div>
+                                            <div class="col-3 align-self-center">
+                                                <div
+                                                    class="d-flex justify-content-center align-items-center thumb-md border-dashed border-warning rounded mx-auto">
+                                                    <i
+                                                        class="iconoir-percentage-circle fs-22 align-self-center mb-0 text-warning"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card bg-corner-img">
+                                    <div class="card-body">
+                                        <div class="row d-flex justify-content-center">
+                                            <div class="col-9">
+                                                <a class="text-muted text-uppercase mb-0 fw-normal fs-13"
+                                                    href="/admin/patients">
+                                                    Total Patient</a>
+                                                <h4 class="mt-1 mb-0 fw-medium" id="stats-users">...</h4>
+                                            </div>
+                                            <div class="col-3 align-self-center">
+                                                <div
+                                                    class="d-flex justify-content-center align-items-center thumb-md border-dashed border-danger rounded mx-auto">
+                                                    <i
+                                                        class="iconoir-hexagon-dice fs-22 align-self-center mb-0 text-danger"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">Today's Orders</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Patient Name</th>
+                                                        <th>Lab Name</th>
+                                                        <th>Package</th>
+                                                        <th>Order Date</th>
+                                                        <th>Count</th>
+                                                        <th>Amount</th>
+                                                        <th>Status</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="orders-table-body">
+                                                    <tr>
+                                                        <td colspan="8" class="text-center">Loading...</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="offcanvas offcanvas-end" tabindex="-1" id="Appearance"
+                        aria-labelledby="AppearanceLabel">
+                        <div class="offcanvas-header border-bottom justify-content-between">
+                            <h5 class="m-0 font-14" id="AppearanceLabel">Appearance</h5>
+                            <button type="button" class="btn-close text-reset p-0 m-0 align-self-center"
+                                data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        <div class="offcanvas-body">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <%- include('../partials/scripts') %>
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", () => {
+                        fetchDashboardStats();
+                        fetchDashboardOrders();
+                    });
+
+                    async function fetchDashboardStats() {
+                        try {
+                            const response = await fetch('/admin/dashboard/stats');
+                            if (!response.ok) throw new Error('Stats API failed');
+
+                            const data = await response.json();
+
+                            if (data.status === true) {
+                                document.getElementById('stats-categories').innerText = data.data.categories;
+                                document.getElementById('stats-packages').innerText = data.data.packages;
+                                document.getElementById('stats-subpackages').innerText = data.data.subPackages;
+                                document.getElementById('stats-users').innerText = data.data.users;
+                            }
+                        } catch (error) {
+                            console.error("Error fetching dashboard stats:", error);
+                            document.getElementById('stats-categories').innerText = 'N/A';
+                            document.getElementById('stats-packages').innerText = 'N/A';
+                            document.getElementById('stats-subpackages').innerText = 'N/A';
+                            document.getElementById('stats-users').innerText = 'N/A';
+                        }
+                    }
+
+                    async function fetchDashboardOrders() {
+                        const tableBody = document.getElementById('orders-table-body');
+                        try {
+                            const response = await fetch('/admin/dashboard/orders?page=1&limit=10');
+                            if (!response.ok) throw new Error('Orders API failed');
+
+                            const data = await response.json();
+
+                            if (data.status === true && data.data.length > 0) {
+                                tableBody.innerHTML = '';
+
+                                data.data.forEach(order => {
+                                    const orderRow = document.createElement('tr');
+
+                                    const statusBadge = getStatusBadge(order.status);
+
+                                    const orderDate = new Date(order.date).toLocaleDateString('en-GB');
+
+                                    orderRow.innerHTML = `
+                            <td>${order.user || 'N/A'}</td>
+                            <td>${order.laboratory_name || 'N/A'}</td>
+                            <td>${order.packageNames.join(', ') || 'N/A'}</td>
+                            <td>${orderDate}</td>
+                            <td>${order.report || 0}</td> 
+                            <td>₹${order.amount.toFixed(2)}</td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <a href="/admin/orders/${order._id}" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        `;
+                                    tableBody.appendChild(orderRow);
+                                });
+
+                            } else {
+                                tableBody.innerHTML = '<tr><td colspan="8" class="text-center">No orders found for today.</td></tr>';
+                            }
+                        } catch (error) {
+                            console.error("Error fetching dashboard orders:", error);
+                            tableBody.innerHTML = `<tr><td colspan="8" class="text-center">Failed to load orders.</td></tr>`;
+                        }
+                    }
+
+                    function getStatusBadge(status) {
+                        switch (status) {
+                            case 1:
+                                return '<span class="badge bg-warning-subtle text-warning">In Review</span>';
+                            case 2:
+                                return '<span class="badge bg-success-subtle text-success">Confirmed</span>';
+                            default:
+                                return `<span class="badge bg-secondary-subtle text-secondary">Unknown</span>`;
+                        }
+                    }
+                </script>
+
+</body>
+
+</html>

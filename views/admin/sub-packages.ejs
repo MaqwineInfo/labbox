@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-startbar="dark" data-bs-theme="light">
+
+<head>
+    <%- include('../partials/head') %>
+</head>
+
+<body>
+
+    <%- include('../partials/topbar') %>
+        <%- include('../partials/sidebar') %>
+
+            <div class="page-wrapper">
+                <div class="page-content">
+                    <div class="container-fluid">
+
+                        <div class="row">
+                            <div class="col-sm-12">
+
+                                <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
+                                    <h4 class="page-title">Sub-Packages</h4>
+                                    <button type="button" class="btn btn-primary ms-2" data-bs-toggle="modal"
+                                        data-bs-target="#addSub-PackagesModal">
+                                        Add Sub-Packages
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <% if (typeof error !=='undefined' && error) { %>
+                                    <div class="alert alert-danger">
+                                        <%= error %>
+                                    </div>
+
+                                    <% } %>
+                                        <% if (typeof success !=='undefined' && success) { %>
+                                            <div class="alert alert-success">
+                                                <%= success %>
+
+                                            </div>
+                                            <% } %>
+                            </div>
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+
+                                        <h4 class="card-title">Sub-Package List</h4>
+                                    </div>
+                                    <div class="card-body">
+
+                                        <div class="d-flex flex-wrap justify-content-between 
+mb-3">
+                                            <form class="d-flex" id="searchForm" action="/admin/sub-packages"
+                                                method="GET">
+                                                <input class="form-control me-2" type="search"
+                                                    placeholder="Search by name" name="name" value="<%= typeof query !== 'undefined' ?
+query.name : '' %>">
+
+                                                <select class="form-control me-2" name="category_id"
+                                                    id="category-dropdown" style="width: 250px;">
+
+                                                    <option value="">Select category</option>
+                                                    <% if (typeof categories !=='undefined' && categories.length> 0) {
+                                                        %>
+
+                                                        <% categories.forEach(c=> { %>
+                                                            <option value="<%= c._id %>" <%=(typeof query !=='undefined'
+                                                                && query.category_id==c._id) ? 'selected' : '' %>>
+                                                                <%= c.name %>
+
+                                                            </option>
+                                                            <% }); %>
+
+                                                                <% } %>
+                                                </select>
+
+
+                                                <select id="package-dropdown" name="package_id"
+                                                    class="form-control me-2" style="width: 250px;">
+
+                                                    <option value="">Select Package</option>
+                                                    <% if (typeof allPackages !=='undefined' && allPackages.length> 0) {
+                                                        %>
+
+                                                        <% allPackages.forEach(p=> { %>
+                                                            <option value="<%= p._id %>" <%=(typeof query !=='undefined'
+                                                                && query.package_id==p._id) ? 'selected' : '' %>>
+                                                                <%= p.name %>
+
+                                                            </option>
+                                                            <% }); %>
+                                                                <% } %>
+                                                </select>
+
+
+                                                <button class="btn btn-outline-primary" type="submit">Filter</button>
+                                                <a href="/admin/sub-packages"
+                                                    class="btn btn-outline-secondary ms-2">Clear</a>
+
+                                            </form>
+
+                                            <div class="ms-auto">
+                                                <div class="dropdown">
+
+                                                    <button class="btn btn-primary dropdown-toggle" type="button"
+                                                        id="filterDropdown" data-bs-toggle="dropdown"
+                                                        aria-expanded="false">
+
+                                                        Filter
+                                                    </button>
+
+                                                    <ul class="dropdown-menu dropdown-menu-end"
+                                                        aria-labelledby="filterDropdown">
+
+                                                        <li><a class="dropdown-item"
+                                                                href="/admin/sub-packages?status=all">All</a></li>
+
+                                                        <li><a class="dropdown-item"
+                                                                href="/admin/sub-packages?status=1">Active</a></li>
+
+                                                        <li><a class="dropdown-item"
+                                                                href="/admin/sub-packages?status=0">Inactive</a></li>
+
+                                                    </ul>
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+
+                                            <table class="table table-striped table-hover" id="SubPackageTable">
+                                                <thead>
+                                                    <tr>
+
+                                                        <th>Image</th>
+                                                        <th>Name</th>
+
+                                                        <th>Short Description</th>
+                                                        <th>Packages</th>
+
+                                                        <th>MRP</th>
+                                                        <th>Status</th>
+
+                                                        <th>Action</th>
+                                                    </tr>
+
+                                                </thead>
+                                                <tbody>
+
+                                                    <% if (typeof subPackages !=='undefined' && subPackages.length> 0) {
+                                                        %>
+                                                        <% subPackages.forEach(a=> { %>
+
+                                                            <tr>
+                                                                <td>
+
+                                                                    <img src="<%= a.avatar || 'https://placehold.co/50x50/eee/31343c?text=Img' %>"
+                                                                        style="border-radius:50%" width="50px"
+                                                                        height="50px" alt="">
+
+                                                                </td>
+                                                                <td>
+
+                                                                    <%= a.name %>
+                                                                </td>
+
+                                                                <td class="short-desc" data-bs-toggle="tooltip"
+                                                                    data-bs-placement="bottom"
+                                                                    title="<%= a.short_desc %>">
+
+                                                                    <%= a.short_desc %>
+                                                                </td>
+
+                                                                <td>
+                                                                    <span class="short-desc" data-bs-toggle="tooltip"
+                                                                        data-bs-placement="bottom"
+                                                                        title="View Packages">
+                                                                        <%= a.packages_id ? a.packages_id.length : 0 %>
+                                                                    </span>
+
+                                                                </td>
+                                                                <td>
+
+                                                                    <%= a.mrp %>
+                                                                </td>
+
+                                                                <td>
+                                                                    <% if (a.status==1) { %>
+
+                                                                        <span
+                                                                            class="badge bg-success-subtle text-success">Active</span>
+                                                                        <% } else { %>
+
+                                                                            <span
+                                                                                class="badge bg-danger-subtle text-danger">Inactive</span>
+                                                                            <% } %>
+
+                                                                </td>
+                                                                <td>
+
+                                                                    <div class="dropdown">
+                                                                        <button
+                                                                            class="btn btn-sm btn-outline-secondary dropdown-toggle edit-SubPackage-link"
+                                                                            type="button" data-bs-toggle="dropdown"
+                                                                            aria-expanded="false" data-id="<%= a._id %>"
+                                                                            data-name="<%= a.name %>"
+                                                                            data-avatar="<%= a.avatar %>"
+                                                                            data-short_desc="<%= a.short_desc %>"
+                                                                            data-long_desc="<%= a.long_desc %>"
+                                                                            data-mrp="<%= a.mrp %>"
+                                                                            data-dis_price="<%= a.dis_price %>"
+                                                                            data-parameter="<%= a.parameter %>"
+                                                                            data-packages="<%= JSON.stringify(a.packages_id ?
+a.packages_id.map(p => p._id) : []) %>">
+                                                                            Action
+
+                                                                        </button>
+                                                                        <ul class="dropdown-menu">
+
+                                                                            <li>
+
+                                                                                <a class="dropdown-item" href="#"
+                                                                                    data-bs-toggle="modal"
+                                                                                    data-bs-target="#editSubPackageModal">
+
+                                                                                    Edit
+
+                                                                                </a>
+                                                                            </li>
+
+
+                                                                            <li>
+                                                                                <% if (a.status==1) { %>
+
+                                                                                    <a class="dropdown-item action-btn"
+                                                                                        href="javascript:void(0);"
+                                                                                        data-id="<%= a._id %>"
+                                                                                        data-action="inactive">
+
+                                                                                        Inactive
+
+                                                                                    </a>
+                                                                                    <% } else { %>
+
+                                                                                        <a class="dropdown-item action-btn"
+                                                                                            href="javascript:void(0);"
+                                                                                            data-id="<%= a._id %>"
+                                                                                            data-action="active">
+                                                                                            Active
+
+                                                                                        </a>
+                                                                                        <% } %>
+                                                                            </li>
+
+
+                                                                            <li>
+                                                                                <hr class="dropdown-divider">
+
+                                                                            </li>
+
+
+                                                                            <li>
+                                                                                <a class="dropdown-item text-danger action-btn"
+                                                                                    href="javascript:void(0);"
+                                                                                    data-id="<%= a._id %>"
+                                                                                    data-action="delete">
+                                                                                    Delete
+
+                                                                                </a>
+
+                                                                            </li>
+                                                                        </ul>
+
+                                                                    </div>
+                                                                </td>
+
+                                                            </tr>
+                                                            <% }); %>
+                                                                <% } else { %>
+                                                                    <tr>
+
+                                                                        <td colspan="7" class="text-center">No
+                                                                            sub-packages found.</td>
+                                                                    </tr>
+
+                                                                    <% } %>
+                                                </tbody>
+
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="offcanvas offcanvas-end" tabindex="-1" id="Appearance"
+                        aria-labelledby="AppearanceLabel">
+                        <div class="offcanvas-header border-bottom justify-content-between">
+                            <h5 class="m-0 font-14" id="AppearanceLabel">Appearance</h5>
+
+                            <button type="button" class="btn-close text-reset p-0 m-0 align-self-center"
+                                data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        <div class="offcanvas-body"></div>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <div class="modal fade" id="addSub-PackagesModal" tabindex="-1" aria-labelledby="addSub-PackagesModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addSub-PackagesModalLabel">Add Sub-Package</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <hr class="m-0">
+                        <form id="addSubPackageForm" method="POST" action="/admin/sub-packages"
+                            enctype="multipart/form-data">
+                            <div class="modal-body">
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="sub-packageName" class="form-label">Sub-package Name</label>
+                                            <input type="text" class="form-control" name="name"
+                                                placeholder="Enter sub-package name" required>
+
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="sub-packageImage" class="form-label">Sub-package Image</label>
+
+                                            <input type="file" class="form-control" name="avatar">
+                                        </div>
+                                        <div class="mb-3">
+
+                                            <label for="shortDesc" class="form-label">Short Description</label>
+                                            <textarea type="text" class="form-control" name="short_desc"
+                                                placeholder="Enter short description"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+
+                                            <label for="longDesc" class="form-label">Long Description</label>
+                                            <textarea class="form-control" name="long_desc"
+                                                placeholder="Enter long description"></textarea>
+
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mrp" class="form-label">MRP</label>
+
+                                            <input type="number" class="form-control" name="mrp"
+                                                placeholder="Enter MRP">
+                                        </div>
+
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="parameter" class="form-label">Parameter</label>
+                                            <textarea type="text" class="form-control" name="parameter"
+                                                placeholder="Enter parameter" rows="5"></textarea>
+
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="dis_price" class="form-label">Discount Price</label>
+
+                                            <input type="number" class="form-control" name="dis_price"
+                                                placeholder="Enter Discount Price">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Select Packages</label>
+
+                                            <select class="form-control js-example-basic-multiple-limit"
+                                                name="packages_id" multiple="multiple" style="width: 100%">
+                                                <% if (typeof allPackages !=='undefined' && allPackages.length> 0) { %>
+
+                                                    <% allPackages.forEach(p=> { %>
+                                                        <option value="<%= p._id %>">
+
+                                                            <%= p.name %>
+                                                        </option>
+
+                                                        <% }); %>
+                                                            <% } %>
+                                            </select>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="m-0">
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="editSubPackageModal" tabindex="-1" aria-labelledby="editSubPackageModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+
+                            <h5 class="modal-title" id="editSubPackageModalLabel">Edit Sub-Package</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <hr class="m-0">
+                        <form id="editPackageForm" method="POST" enctype="multipart/form-data">
+
+                            <input type="hidden" id="editSubPackageId" name="id">
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+
+                                        <div class="mb-3">
+                                            <label for="editPackageName" class="form-label">Sub-Package Name</label>
+
+                                            <input type="text" class="form-control" id="editPackageName" name="name">
+                                        </div>
+                                        <div class="mb-3">
+
+                                            <label for="editPackageImage" class="form-label">Sub-Package Image</label>
+                                            <input type="file" class="form-control" id="editPackageImage" name="avatar">
+                                            <div class="mt-2">
+
+                                                <img id="editPackageImagePreview" src="" alt="Package Image" style="height: 100px;
+width: 100px; border-radius:50%; display: none;">
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="editShortDesc" class="form-label">Short Description</label>
+                                            <textarea type="text" class="form-control" id="editShortDesc"
+                                                name="short_desc"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+
+                                            <label for="editLongDesc" class="form-label">Long Description</label>
+                                            <textarea class="form-control" id="editLongDesc"
+                                                name="long_desc"></textarea>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="editMRP" class="form-label">MRP</label>
+
+                                            <input type="number" class="form-control" id="editMRP" name="mrp">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+
+                                        <div class="mb-3">
+                                            <label for="editParameter" class="form-label">Parameter</label>
+
+                                            <textarea type="text" class="form-control" id="editParameter"
+                                                name="parameter" rows="5"></textarea>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="editDisPrice" class="form-label">Discount Price</label>
+                                            <input type="number" class="form-control" id="editDisPrice"
+                                                name="dis_price">
+
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Packages</label>
+
+                                            <select class="form-control js-example-basic-multiple-limit"
+                                                id="editPackages" name="packages_id" multiple="multiple"
+                                                style="width: 100%">
+
+                                                <% if (typeof allPackages !=='undefined' && allPackages.length> 0) { %>
+                                                    <% allPackages.forEach(p=> { %>
+
+                                                        <option value="<%= p._id %>">
+                                                            <%= p.name %>
+                                                        </option>
+
+                                                        <% }); %>
+                                                            <% } %>
+                                            </select>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="m-0">
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Update</button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="actionModal" tabindex="-1" role="dialog" aria-labelledby="actionModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-body text-center">
+                            ...
+                            <h6 id="confirmationMessage">Are you sure?</h6>
+                        </div>
+                        <div class="modal-footer justify-content-center">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="confirmAction">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <%- include('../partials/scripts') %>
+                <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+                <script>
+                    // Helper to get Auth Headers
+
+                    function getAuthHeaders() {
+                        const token = localStorage.getItem('adminToken');
+                        const headers = {
+                            'Accept': 'application/json'
+                        };
+                        if (token && token !== 'null') {
+                            headers['Authorization'] = 'Bearer' + token;
+                        }
+                        return headers;
+                    }
+
+                    $(document).ready(function () {
+
+                        // 1. Initialize Plugins
+                        $('.js-example-basic-multiple-limit').select2({
+                            placeholder: "Select packages",
+                            width: '100%'
+                        });
+
+                        $('#category-dropdown').select2({
+                            placeholder: "Select Category",
+                            allowClear: true, width: '250px'
+                        });
+                        $('#package-dropdown').select2({ placeholder: "Select Package", allowClear: true, width: '250px' });
+
+                        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                        tooltipTriggerList.map(function (tooltipTriggerEl) {
+                            return new bootstrap.Tooltip(tooltipTriggerEl);
+                        });
+
+                        // 2. Theme Toggler
+
+                        const themeToggleBtn = document.getElementById('light-dark-mode');
+                        const htmlElement = document.documentElement;
+                        const currentTheme = localStorage.getItem('theme') || 'light';
+                        htmlElement.setAttribute('data-bs-theme', currentTheme);
+                        if (themeToggleBtn) {
+                            themeToggleBtn.addEventListener('click', (e) => {
+                                e.preventDefault();
+                                const newTheme = htmlElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                                htmlElement.setAttribute('data-bs-theme', newTheme);
+
+                                localStorage.setItem('theme', newTheme);
+                            });
+                        }
+
+                        // =========================================================
+                        // 3. DELETE / STATUS UPDATE LOGIC (Action Modal)
+                        // =========================================================
+                        let actionUrl = '';
+                        let httpMethod = 'POST';
+                        // Default to POST, will be overwritten
+
+                        const actionModalElement = document.getElementById('actionModal');
+                        const actionModal = actionModalElement ? new bootstrap.Modal(actionModalElement) : null;
+
+                        // Step 1: Set up modal data when an action button is clicked
+                        $(document).on('click', '.action-btn', function (e) {
+                            e.preventDefault();
+                            if (!actionModal) return;
+
+                            const id = $(this).data('id');
+                            const action = $(this).data('action');
+                            const msgElement = $('#confirmationMessage');
+
+                            if (action === 'delete') {
+                                msgElement.text('Are you sure you want to DELETE this Sub-Package?');
+                                actionUrl = `/admin/sub-packages/${id}`;
+                                httpMethod = 'DELETE';
+
+                            } else if (action === 'inactive') {
+                                msgElement.text('Are you sure you want to make this Sub-Package INACTIVE?');
+                                actionUrl = `/admin/sub-packages/${id}/toggle-status`;
+                                httpMethod = 'PATCH';
+                            } else
+                                if (action === 'active') {
+                                    msgElement.text('Are you sure you want to make this Sub-Package ACTIVE?');
+                                    actionUrl = `/admin/sub-packages/${id}/toggle-status`;
+                                    httpMethod = 'PATCH';
+                                } else {
+                                    return;
+                                }
+                            // Update the button text color in the modal based on action (e.g., Delete is red, others are primary)
+                            const confirmBtn = $('#confirmAction');
+                            if (action === 'delete') {
+                                confirmBtn.removeClass('btn-primary').addClass('btn-danger').text('Delete');
+                            } else {
+                                confirmBtn.removeClass('btn-danger').addClass('btn-primary').text('Confirm');
+                            }
+
+                            actionModal.show();
+                        });
+
+                        // Step 2: Handle the confirmation click
+                        $('#confirmAction').on('click', function () {
+                            if (!actionUrl) return;
+                            const btn = $(this);
+                            btn.prop('disabled', true).text('Processing...');
+
+                            const headers = getAuthHeaders();
+
+                            $.ajax({
+                                url: actionUrl,
+                                type: httpMethod,
+                                headers: headers,
+                                success: function (response) {
+                                    // Corrected logic to check for success status (200, 201 etc.)
+                                    if (response.status === true || response.code === 200 || response.code === 201) {
+                                        alert(response.message || 'Action successful');
+                                        location.reload();
+                                    } else {
+                                        alert(response.message || 'Failed.');
+                                    }
+                                },
+                                error: function (xhr) {
+                                    let errorMsg = 'Something went wrong.';
+                                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                                        errorMsg = xhr.responseJSON.message;
+                                    } else if (xhr.statusText) {
+                                        errorMsg = xhr.statusText;
+                                    }
+                                    alert(errorMsg);
+                                },
+                                complete: function () {
+                                    btn.prop('disabled', false).text('OK');
+                                    actionModal.hide();
+                                }
+                            });
+                        });
+                        // =========================================================
+                        // 4. ADD / EDIT FORM SUBMISSION LOGIC
+                        // =========================================================
+
+                        // Pre-fill Edit Modal
+                        $('#editSubPackageModal').on('show.bs.modal', function (event) {
+                            const button = $(event.relatedTarget);
+                            const dropdownToggle
+                                = button.closest('.dropdown').find('.edit-SubPackage-link');
+
+                            const data = {
+                                id: dropdownToggle.data('id'),
+                                name: dropdownToggle.data('name'),
+                                avatar: dropdownToggle.data('avatar'),
+
+                                short_desc: dropdownToggle.data('short_desc'),
+                                long_desc: dropdownToggle.data('long_desc'),
+                                mrp: dropdownToggle.data('mrp'),
+                                dis_price: dropdownToggle.data('dis_price'),
+
+                                parameter: dropdownToggle.data('parameter'),
+                                packages: dropdownToggle.data('packages')
+                            };
+                            const modal = $(this);
+                            modal.find('#editSubPackageId').val(data.id);
+                            modal.find('#editPackageName').val(data.name);
+                            modal.find('#editShortDesc').val(data.short_desc);
+                            modal.find('#editLongDesc').val(data.long_desc);
+                            modal.find('#editMRP').val(data.mrp);
+                            modal.find('#editDisPrice').val(data.dis_price);
+                            modal.find('#editParameter').val(data.parameter);
+                            // Set dynamic Action URL for Edit
+                            modal.find('#editPackageForm').attr('action', `/admin/sub-packages/${data.id}`);
+                            modal.find('#editPackageForm').data('method', 'PUT'); // Tag for our handler
+
+                            // Image Preview
+                            const preview = modal.find('#editPackageImagePreview');
+                            if (data.avatar && data.avatar !== 'null') {
+                                preview.attr('src', data.avatar).show();
+                            } else {
+                                preview.hide();
+                            }
+
+                            // Select2 Update
+                            modal.find('#editPackages').val(data.packages).trigger('change');
+                        });
+
+                        // Generic Form Handler (Add and Edit)
+                        async function handleFormSubmit(formId) {
+                            const form = document.getElementById(formId);
+                            if (!form) return;
+
+                            form.addEventListener('submit', async function (event) {
+                                event.preventDefault();
+                                const submitBtn = form.querySelector('button[type="submit"]');
+                                submitBtn.disabled = true;
+
+                                const formData = new FormData(form);
+
+
+                                // Handle Select2 multi-select values manually for FormData
+                                const $select = $(form).find('.js-example-basic-multiple-limit');
+                                const packages = $select.val();
+
+                                formData.delete('packages_id'); // clear existing logic
+                                if (packages && packages.length > 0) {
+                                    // Append each package ID separately for server-side array parsing (as done in the controller)
+                                    packages.forEach(id => formData.append('packages_id', id));
+                                }
+
+
+                                // Determine Method (POST vs PUT)
+                                const isEdit = form.id === 'editPackageForm';
+                                const method = isEdit ? 'PUT' : 'POST';
+                                const action = form.action;
+                                const headers = getAuthHeaders();
+
+                                try {
+                                    // The server-side controller expects PUT to handle form data correctly (not JSON)
+                                    // This uses fetch with FormData for file uploads, which is necessary.
+                                    const response = await fetch(action, {
+                                        method: method,
+                                        body: formData,
+
+                                        headers: {
+                                            'Authorization': headers['Authorization']
+                                            // Do NOT set 'Content-Type' for FormData, browser does it
+
+                                        }
+                                    });
+                                    const result = await response.json();
+
+                                    if (response.ok) {
+                                        alert(result.message || 'Saved successfully!');
+                                        location.reload();
+                                    } else {
+                                        alert(result.message || `Error: Failed to save.`);
+                                    }
+                                } catch (error) {
+                                    console.error(error);
+                                    alert('Network error or server offline.');
+                                } finally {
+                                    submitBtn.disabled = false;
+                                }
+                            });
+                        }
+
+                        handleFormSubmit('addSubPackageForm');
+                        handleFormSubmit('editPackageForm');
+                        // 5. Filter Trigger
+                        $('#category-dropdown, #package-dropdown').on('change', function () {
+                            $('#searchForm').submit();
+                        });
+                    });
+                </script>
+</body>
+
+</html>

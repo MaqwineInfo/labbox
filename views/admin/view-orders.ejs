@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-startbar="dark" data-bs-theme="light">
+
+<head>
+    <%- include('../partials/head') %>
+</head>
+
+<body>
+    <%# 
+      This file expects a single 'order' object from your backend.
+      This object should contain nested objects: 'patient', 'lab', and 'items' (array).
+      Example: { id: '1002', patient: { name: '...' }, lab: { name: '...' }, items: [...] }
+    %>
+    <%- include('../partials/topbar') %>
+    <%- include('../partials/sidebar') %>
+
+    <div class="page-wrapper">
+        <div class="page-content">
+            <div class="container-fluid">
+
+                <!-- Page Title -->
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
+                            <h4 class="page-title">Order Details: #<%= order.id || order._id || 'N/A' %></h4>
+                            <a href="/admin/orders" class="btn btn-sm btn-outline-secondary">Back to Orders</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error/Success Messages -->
+                <div class="row">
+                    <div class="col-12">
+                        <% if (typeof error !== 'undefined' && error) { %>
+                            <div class="alert alert-danger"><%= error %></div>
+                        <% } %>
+                        <% if (typeof success !== 'undefined' && success) { %>
+                            <div class="alert alert-success"><%= success %></div>
+                        <% } %>
+                    </div>
+                </div>
+
+
+                <!-- User/Lab Details Card -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">User & Lab Details</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Patient Details -->
+                                    <div class="col-md-6">
+                                        <h5>Patient Details</h5>
+                                        <dl class="row mb-0">
+                                            <dt class="col-sm-4">Patient Name</dt>
+                                            <dd class="col-sm-8"><%= order.patient ? order.patient.name : 'N/A' %></dd>
+
+                                            <dt class="col-sm-4">Patient Contact</dt>
+                                            <dd class="col-sm-8"><%= order.patient ? order.patient.contact_no : 'N/A' %></dd>
+
+                                            <dt class="col-sm-4">Patient Age</dt>
+                                            <dd class="col-sm-8"><%= order.patient ? order.patient.age : 'N/A' %></dd>
+
+                                            <dt class="col-sm-4">Patient Relation</dt>
+                                            <dd class="col-sm-8"><%= order.patient ? order.patient.relation : 'N/A' %></dd>
+
+                                            <dt class="col-sm-4">Gender</dt>
+                                            <dd class="col-sm-8"><%= order.patient ? order.patient.gender : 'N/A' %></dd>
+                                        </dl>
+                                    </div>
+                                    <!-- Lab Details -->
+                                    <div class="col-md-6 mt-3 mt-md-0">
+                                        <h5>Lab Details</h5>
+                                        <dl class="row mb-0">
+                                            <dt class="col-sm-4">Lab Name</dt>
+                                            <dd class="col-sm-8"><%= order.lab ? order.lab.name : 'N/A' %></dd>
+
+                                            <dt class="col-sm-4">Lab Contact</dt>
+                                            <dd class="col-sm-8"><%= order.lab ? (order.lab.contact_1 || order.lab.contact) : 'N/A' %></dd>
+
+                                            <dt class="col-sm-4">Lab Email</dt>
+                                            <dd class="col-sm-8"><%= order.lab ? order.lab.email : 'N/A' %></dd>
+
+                                            <dt class="col-sm-4">Lab Address</dt>
+                                            <dd class="col-sm-8"><%= order.lab ? order.lab.address_1 : 'N/A' %></dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Package Details Card -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">Package Details</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table" id="patientTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Sr.</th>
+                                                <th>Name</th>
+                                                <th>MRP</th>
+                                                <th>Discount Price</th>
+                                                <th>Discount in %</th>
+                                                <%# Use a real property like 'prescription_id' %>
+                                                <% if (order.prescription_id) { %>
+                                                    <th>View</th>
+                                                    <th>Set Price</th>
+                                                <% } %>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% 
+                                                let totalMrp = 0;
+                                                let totalDisPrice = 0;
+                                                
+                                                // Loop over the 'items' array from the 'order' object
+                                                if (order.items && order.items.length > 0) {
+                                                    order.items.forEach((item, index) => {
+                                                    totalMrp += (item.package_mrp || 0);
+                                                    totalDisPrice += (item.package_dis_price || 0);
+                                            %>
+                                            <tr>
+                                                <td><%= index + 1 %></td>
+                                                <td><%= item.package_name || 'N/A' %></td>
+                                                <td>₹<%= (item.package_mrp || 0).toFixed(2) %></td>
+                                                <td>₹<%= (item.package_dis_price || 0).toFixed(2) %></td>
+                                                <td><%= item.discount_percentage || 0 %>%</td>
+                                                
+                                                <% if (order.prescription_id) { %>
+                                                    <td>
+                                                        <%# Use the real S3 URL if available %>
+                                                        <a href="<%= item.prescription_details || '#' %>" target="_blank">
+                                                            <i class="iconoir-eye-alt"></i>
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#set-PriceModel">
+                                                            <i class="iconoir-add-circle"></i> Set Price
+                                                        </button>
+                                                    </td>
+                                                <% } %>
+                                            </tr>
+                                            <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="5" class="text-center">No items found for this order.</td>
+                                                </tr>
+                                            <% } %>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="2" class="text-end"><strong>Total:</strong></td>
+                                                <td><strong>₹<%= totalMrp.toFixed(2) %></strong></td>
+                                                <td><strong>₹<%= totalDisPrice.toFixed(2) %></strong></td>
+                                                <td></td>
+                                                <% if (order.prescription_id) { %>
+                                                    <td colspan="2"></td>
+                                                <% } %>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- container-fluid -->
+
+            <!-- Appearance Offcanvas -->
+            <div class="offcanvas offcanvas-end" tabindex="-1" id="Appearance" aria-labelledby="AppearanceLabel">
+                <div class="offcanvas-header border-bottom justify-content-between">
+                    <h5 class="m-0 font-14" id="AppearanceLabel">Appearance</h5>
+                    <button type="button" class="btn-close text-reset p-0 m-0 align-self-center"
+                        data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <%# ... Appearance settings ... %>
+                </div>
+            </div>
+
+            <!-- Set Price Modal -->
+            <div class="modal fade" id="set-PriceModel" tabindex="-1" aria-labelledby="set-PriceModelLabel" aria-hidden="true">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="set-PriceModelLabel">Add Prescription Price</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <hr>
+                        <form id="addPrescriptionPrice" action="/admin/orders/add-price" method="POST">
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="mrp" class="form-label">MRP</label>
+                                        <%# Pass the real order ID to the form %>
+                                        <input type="text" name="order_id" value="<%= order.id || order._id %>" hidden>
+                                        <input type="number" class="form-control" name="mrp" placeholder="Enter MRP" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="price" class="form-label">Price</label>
+                                        <input type="number" class="form-control" name="price" placeholder="Enter Price" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                                <input type="submit" class="btn btn-primary" value="Save" id="btnSubmit">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- end page content -->
+    </div>
+    <!-- end page-wrapper -->
+
+    <%- include('../partials/scripts') %>
+
+    <script>
+        // Add your script for the modal submission here
+        document.getElementById('addPrescriptionPrice').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Add any other headers like CSRF token if needed
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert('Price Set Successfully!');
+                    // Optionally, close the modal
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('set-PriceModel'));
+                    modal.hide();
+                    // Optionally, reload the page or update the UI
+                    location.reload();
+                } else {
+                    alert('Failed to set price.');
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                alert('An error occurred.');
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!-- <script src="../../public/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../../public/libs/simplebar/simplebar.min.js"></script>
+<script src="../../public/libs/apexcharts/apexcharts.min.js"></script>
+<script src="https://apexcharts.com/samples/public/stock-prices.js"></script>
+<script src="../../public/js/pages/index.init.js"></script>
+<script src="../../public/js/DynamicSelect.js"></script>
+<script src="../../public/js/app.js"></script> -->
+
+<script src="/public/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/public/libs/simplebar/simplebar.min.js"></script>
+<script src="/public/libs/apexcharts/apexcharts.min.js"></script>
+<script src="https://apexcharts.com/samples/public/stock-prices.js"></script>
+<script src="/public/js/pages/index.init.js"></script>
+<script src="/public/js/DynamicSelect.js"></script>
+<script src="/public/js/app.js"></script>
+<script src="/public/assets/js/app.js"></script>
+<script src="/public/assets/libs/simplebar/simplebar.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const logoutBtn = document.getElementById('logout-btn');
+    const authToken = localStorage.getItem('adminToken');
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function(e) {
+            e.preventDefault(); 
+            try {
+                const response = await fetch('/admin/dashboard/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json', 
+                        'Authorization': `Bearer ${authToken}` 
+                    }
+                }); 
+                const result = await response.json(); 
+                if (response.ok && result.status) { 
+                    localStorage.removeItem('adminToken'); 
+                    window.location.href = result.redirect || '/admin'; 
+                } else {
+                    alert(result.message || 'Logout failed.');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('A network error occurred during logout.');
+            }
+        });
+    } 
+});
+</script>

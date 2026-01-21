@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-startbar="dark" data-bs-theme="light">
+
+<head>
+    <%- include('../partials/head') %>
+</head>
+
+<body>
+
+    <%- include('../partials/topbar') %>
+    <%- include('../partials/sidebar') %>
+
+    <div class="page-wrapper">
+        <div class="page-content">
+            <div class="container-fluid">
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
+                            <h4 class="page-title">Banners</h4>
+                            <button type="button" class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#addbennerModal">
+                                Add Banner
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <% if (typeof error !== 'undefined' && error && error.length > 0) { %>
+                            <div class="alert alert-danger"><%= error %></div>
+                        <% } %>
+                        <% if (typeof success !== 'undefined' && success && success.length > 0) { %>
+                            <div class="alert alert-success"><%= success %></div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">Banner List</h4>
+                            </div>
+                            <div class="card-body">
+                                
+                                <div class="d-flex flex-wrap justify-content-between mb-3">
+                                    <form class="d-flex" id="searchForm" action="/admin/banners" method="GET">
+                                        <input class="form-control me-2" type="search" placeholder="Search by Link" name="linked_with" value="<%= typeof query !== 'undefined' ? query.linked_with : '' %>">
+                                        <button class="btn btn-outline-primary" type="submit">Search</button>
+                                        <a href="/admin/banners" class="btn btn-outline-secondary ms-2">Clear</a>
+                                    </form>
+                                    
+                                    <div class="ms-auto">
+                                        <div class="dropdown">
+                                            <button class="btn btn-primary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Filter
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="filterDropdown">
+                                                <li><a class="dropdown-item" href="/admin/banners?status=all">All</a></li>
+                                                <li><a class="dropdown-item" href="/admin/banners?status=1">Active</a></li>
+                                                <li><a class="dropdown-item" href="/admin/banners?status=0">Inactive</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover" id="bennerTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Image</th>
+                                                <th>Linked with</th>
+                                                <th>From</th>
+                                                <th>To</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (typeof benner !== 'undefined' && benner.length > 0) { %>
+                                                <% benner.forEach(b => { %>
+                                                    <tr>
+                                                        <td>
+                                                            <img src="<%= b.avatar || 'https://placehold.co/50x50/eee/31343c?text=Img' %>" style="border-radius:50%" width="50px" height="50px" alt="Banner">
+                                                        </td>
+                                                        <td><a href="<%= b.linked_with %>" target="_blank"><%= b.linked_with %></a></td>
+                                                        <td><%= b.from ? new Date(b.from).toLocaleDateString('en-CA') : 'N/A' %></td>
+                                                        <td><%= b.to ? new Date(b.to).toLocaleDateString('en-CA') : 'N/A' %></td>
+                                                        <td>
+                                                            <% if (b.status == 1) { %>
+                                                                <span class="badge bg-success-subtle text-success">Active</span>
+                                                            <% } else { %>
+                                                                <span class="badge bg-danger-subtle text-danger">Inactive</span>
+                                                            <% } %>
+                                                        </td>
+                                                        <td>
+                                                            <div class="dropdown">
+                                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle edit-benner-link" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                                                    data-id="<%= b._id %>"
+                                                                    data-avatar="<%= b.avatar %>"
+                                                                    data-linked_with="<%= b.linked_with %>"
+                                                                    data-from="<%= b.from ? new Date(b.from).toLocaleDateString('en-CA') : '' %>"
+                                                                    data-to="<%= b.to ? new Date(b.to).toLocaleDateString('en-CA') : '' %>">
+                                                                    Action
+                                                                </button>
+                                                                <ul class="dropdown-menu">
+                                                                    <li>
+                                                                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editbennerModal">
+                                                                            Edit
+                                                                        </a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <% if(b.status == 1) { %>
+                                                                            <a class="dropdown-item action-btn" href="#" data-id="<%= b._id %>" data-action="inactive">Inactive</a>
+                                                                        <% } else { %>
+                                                                            <a class="dropdown-item action-btn" href="#" data-id="<%= b._id %>" data-action="active">Active</a>
+                                                                        <% } %>
+                                                                    </li>
+                                                                    <li><hr class="dropdown-divider"></li>
+                                                                    <li>
+                                                                        <a class="dropdown-item text-danger action-btn" href="#" data-id="<%= b._id %>" data-action="delete">Delete</a>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="6" class="text-center">No banners found.</td>
+                                                </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <div class="offcanvas offcanvas-end" tabindex="-1" id="Appearance" aria-labelledby="AppearanceLabel">
+                <div class="offcanvas-header border-bottom justify-content-between">
+                    <h5 class="m-0 font-14" id="AppearanceLabel">Appearance</h5>
+                    <button type="button" class="btn-close text-reset p-0 m-0 align-self-center" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body"></div>
+            </div>
+
+        </div>
+        </div>
+    <div class="modal fade" id="addbennerModal" tabindex="-1" aria-labelledby="addbennerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addbennerModalLabel">Add Banner</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <hr class="m-0">
+                <form id="addbennerForm" method="POST" action="/admin/banners" enctype="multipart/form-data" data-method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="bennerImage" class="form-label">Banner Image</label>
+                            <input type="file" class="form-control" id="bennerImage" name="avatar">
+                            <span id="avatarError" class="text-danger" style="display:none;"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Link" class="form-label">Linked With</label>
+                            <textarea class="form-control" id="Link" name="linked_with" placeholder="link with?"></textarea>
+                            <span id="LinkError" class="text-danger" style="display:none;"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="from" class="form-label">From</label>
+                            <input type="date" class="form-control" id="from" name="from" required>
+                            <span id="fromError" class="text-danger" style="display:none;"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="to" class="form-label">To</label>
+                            <input type="date" class="form-control" id="to" name="to" required>
+                            <span id="toError" class="text-danger" style="display:none;"></span>
+                        </div>
+                    </div>
+                    <hr class="m-0">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save banner</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editbennerModal" tabindex="-1" aria-labelledby="editbennerModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editbennerModalLabel">Edit banner</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <hr class="m-0">
+                <form id="editbennerForm" method="POST" enctype="multipart/form-data" data-method="PUT">
+                    <input type="hidden" id="editBannerId" name="id">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editbennerImage" class="form-label">Banner Image</label>
+                            <input type="file" class="form-control" id="editbennerImage" name="avatar">
+                            <span id="editAvatarError" class="text-danger" style="display:none;"></span>
+                            <div class="mt-2">
+                                <img id="editbennerImagePreview" src="" alt="benner Image" style="height: 100px; width: 100px; border-radius:50%; display:none;">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editLink" class="form-label">Linked With</label>
+                            <textarea class="form-control" id="editLink" name="linked_with"></textarea>
+                            <span id="editLinkError" class="text-danger" style="display:none;"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editfrom" class="form-label">From</label>
+                            <input type="date" class="form-control" id="editfrom" name="from" required>
+                            <span id="editfromError" class="text-danger" style="display:none;"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editTo" class="form-label">To</label>
+                            <input type="date" class="form-control" id="editTo" name="to" required>
+                            <span id="editToError" class="text-danger" style="display:none;"></span>
+                        </div>
+                    </div>
+                    <hr class="m-0">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save banner</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="actionModal" tabindex="-1" role="dialog" aria-labelledby="actionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <h5 class="modal-title justify-content-center" id="actionModalLabel">
+                        <i class="iconoir-warning-circle-outline" style="font-size: 3rem; color: #f1416c;"></i>
+                    </h5><br>
+                    <h6 id="confirmationMessage">Are you sure?</h6>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmAction">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <%- include('../partials/scripts') %>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // 1. Handle Edit Modal
+            const editModal = document.getElementById('editbennerModal');
+            editModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget.closest('.edit-benner-link');
+                
+                const banner = {
+                    id: button.getAttribute('data-id'),
+                    avatar: button.getAttribute('data-avatar'),
+                    linked_with: button.getAttribute('data-linked_with'),
+                    from: button.getAttribute('data-from'),
+                    to: button.getAttribute('data-to')
+                };
+
+                const modal = this;
+                modal.querySelector('#editBannerId').value = banner.id;
+                modal.querySelector('#editLink').value = banner.linked_with;
+                modal.querySelector('#editfrom').value = banner.from;
+                modal.querySelector('#editTo').value = banner.to;
+                
+                // *** CORRECTED FORM ACTION ***
+                // This now points to PUT /admin/banners/:id
+                modal.querySelector('#editbennerForm').action = `/admin/banners/${banner.id}`;
+
+                // Update image preview
+                const preview = modal.querySelector('#editbennerImagePreview');
+                if (banner.avatar && banner.avatar !== 'null') {
+                    preview.src = banner.avatar;
+                    preview.style.display = 'block';
+                } else {
+                    preview.src = '';
+                    preview.style.display = 'none';
+                }
+            });
+
+            // 2. Handle Action Confirmation Modal
+            const actionModal = new bootstrap.Modal(document.getElementById('actionModal'));
+            const confirmActionBtn = document.getElementById('confirmAction');
+            const confirmationMessage = document.getElementById('confirmationMessage');
+            let actionUrl = '';
+            let httpMethod = 'POST'; // Default
+
+            document.querySelectorAll('.action-btn').forEach(button => {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const bannerId = this.getAttribute('data-id');
+                    const action = this.getAttribute('data-action');
+
+                    if (action === 'delete') {
+                        confirmationMessage.innerText = 'Are you sure to Delete this banner?';
+                        // *** CORRECTED URL AND METHOD ***
+                        // DELETE /admin/banners/:id
+                        actionUrl = `/admin/banners/${bannerId}`;
+                        httpMethod = 'DELETE';
+                    } else if (action === 'inactive' || action === 'active') {
+                        confirmationMessage.innerText = `Are you sure to ${action} this banner?`;
+                        // *** CORRECTED URL AND METHOD ***
+                        // PATCH /admin/banners/:id/toggle-status
+                        actionUrl = `/admin/banners/${bannerId}/toggle-status`;
+                        httpMethod = 'PATCH'; 
+                    }
+                    
+                    actionModal.show();
+                });
+            });
+
+            // Handle the confirmation click
+            confirmActionBtn.addEventListener('click', async function () {
+                if (actionUrl) {
+                    try {
+                        const response = await fetch(actionUrl, {
+                            method: httpMethod, // Uses the correct method (PATCH or DELETE)
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        if (response.ok) {
+                            actionModal.hide();
+                            location.reload(); // Reload the page on success
+                        } else {
+                            const err = await response.json();
+                            alert(err.message || 'Failed to perform action.');
+                        }
+                    } catch (error) {
+                        alert('An error occurred.');
+                    }
+                }
+            });
+
+            // 3. Handle Form Submissions (Add and Edit)
+            handleFormSubmit('addbennerForm');
+            handleFormSubmit('editbennerForm');
+
+            function handleFormSubmit(formId) {
+                const form = document.getElementById(formId);
+                form.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    submitButton.disabled = true;
+
+                    const formData = new FormData(form);
+                    
+                    // *** CORRECTED METHOD ***
+                    // Reads 'data-method' (POST or PUT) from the form element
+                    const method = form.dataset.method || 'POST';
+
+                    try {
+                        const response = await fetch(form.action, { // form.action is now correct
+                            method: method,
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            const modalId = form.closest('.modal').id;
+                            const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+                            modal.hide();
+                            location.reload(); // Reload to see changes
+                        } else {
+                            // Handle errors
+                            const errorData = await response.json();
+                            alert(errorData.message || 'Failed to save banner.');
+                        }
+                    } catch (error) {
+                        alert('An error occurred.');
+                    } finally {
+                        submitButton.disabled = false;
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
