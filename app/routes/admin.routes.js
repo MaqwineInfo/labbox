@@ -17,6 +17,7 @@ const patient = require('../controllers/patient.controllers');
 const offer = require('../controllers/offer.controllers');  
 const user = require('../controllers/users.controllers');
 const setting = require('../controllers/setting.controllers');
+const upload = require('../middlewares/upload.middleware');
 const auth = require('../middlewares/auth.middleware');
 
 // ******* Dashboard Routes ********
@@ -33,8 +34,8 @@ router.get('/dashboard', auth,  dashboard.dashboard);
 
 // ******* Banner Routes ********
 router.get('/banners', auth ,  benner.banners);
-router.post('/banners', auth , benner.createBanner);
-router.put('/banners/:id', auth , benner.updateBanner);
+router.post('/banners', auth , upload.single('avatar'), benner.createBanner);
+router.put('/banners/:id', auth , upload.single('avatar'), benner.updateBanner);
 router.patch('/banners/:id/toggle-status', auth , benner.toggleBannerStatus);
 router.delete('/banners/:id', auth , benner.deleteBanner); 
 

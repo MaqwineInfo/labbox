@@ -2,8 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const session = require('express-session');
-const fileUpload = require('express-fileupload');
+const session = require('express-session'); 
 const { connection } = require('./config/connection');
 const apiRoutes = require('./app/routes/api.routes');
 const adminRoutes = require('./app/routes/admin.routes');
@@ -17,16 +16,12 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-app.use(fileUpload({
-    useTempFiles: true,  
-    tempFileDir: '/tmp/'  
-}));
-
+ 
 app.use(session({
     secret: process.env.SESSION_SECRET, 
     resave: true,

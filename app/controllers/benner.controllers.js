@@ -1,65 +1,47 @@
-const Banner = require('../models/benner.model');  
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-const dotenv = require('dotenv'); 
+const Banner = require('../models/benner.model');    
 const fs = require('fs');
+const path = require('path');
 
-dotenv.config();
+const deleteLocalFile = (filePath) => {
+    if (!filePath) return;  
 
-const s3 = new S3Client({
-  region: process.env.AWS_DEFAULT_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+    let relativePath = filePath;
+ 
+    if (filePath.startsWith('http')) {
+        const splitArr = filePath.split('/uploads/');
+        if (splitArr.length > 1) {
+            relativePath = `uploads/${splitArr[1]}`;
+        }
+    }
 
-// Sanitize filenames
-const sanitizeFileName = (fileName) => {
-  let sanitizedFileName = fileName
-    .replace(/[^a-zA-Z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .toLowerCase();
-  return sanitizedFileName.length > 5
-    ? sanitizedFileName.substring(0, 50)
-    : sanitizedFileName;
+    const fullPath = path.join(__dirname, '../../', relativePath); 
+    
+    if (fs.existsSync(fullPath)) {
+        fs.unlink(fullPath, (err) => {
+            if (err) console.error("Error deleting file:", err);
+            else console.log("File deleted successfully:", fullPath);
+        });
+    }
 };
+  
+const getFileUrl = (req, filePath) => {
+    if (!filePath) return null;
+    if (filePath.startsWith('http')) return filePath;  
 
-// Upload file to S3
-const uploadFileToS3 = async (file) => {    
-  if (!file) return null;
-
-  const sanitizedImageName = sanitizeFileName(file.name);
-  const filePath = `abn/${Date.now()}_${sanitizedImageName}`;
-
-  const uploadParams = {
-    Bucket: process.env.AWS_BUCKET,
-    Key: filePath,
-    Body: fs.createReadStream(file.tempFilePath),
-    ContentType: file.mimetype,
-  };
-
-  try {
-    await s3.send(new PutObjectCommand(uploadParams));
-    fs.unlinkSync(file.tempFilePath);
-    return `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_DEFAULT_REGION}.amazonaws.com/${filePath}`;
-  } catch (error) {
-    console.error("Error uploading to S3:", error);
-    if (fs.existsSync(file.tempFilePath)) fs.unlinkSync(file.tempFilePath);
-    throw new Error("S3 upload failed");
-  }
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    return `${req.protocol}://${req.get('host')}/${normalizedPath}`;
 };
 
 // Helper function for error responses
 const handleError = (res, error, message = "Server Error", code = 500) => {
     console.error(message, error);
     res.status(code).json({
-        code : 500,
+        code,
         status: false,
         message,
         error: error.message
     });
 };
-
 
 // =================================================================
 //                 USER-FACING/PUBLIC API
@@ -143,27 +125,26 @@ exports.getAllBannersAdmin = async (req, res) => {
  
 // Create a new banner
 exports.createBanner = async (req, res) => {
-    try { 
+    try {
         const { linked_with, from, to } = req.body;
-         
-        const avatarFile = req.files ? req.files.avatar : null; 
- 
+        const avatarFile = req.file; 
+
         if (!from || !to) {
-            return res.status(400).json({ 
-                code : 400,
-                status: false, 
-                message: "From and To dates are required" });
+            return res.status(400).json({ code: 400, status: false, message: "From and To dates are required" });
         }
-         
+
         if (new Date(to) < new Date(from)) {
-             return res.status(400).json({ 
-                 code : 400,
-                 status: false, 
-                 message: "To date must be after From date" });
+            return res.status(400).json({ code: 400, status: false, message: "To date must be after From date" });
         }
- 
-        const newBanner = new Banner({ 
-            avatar: await uploadFileToS3(avatarFile),
+
+        let avatarPath = null;
+        if (avatarFile) { 
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            avatarPath = `${baseUrl}/uploads/banners/${avatarFile.filename}`;
+        }
+
+        const newBanner = new Banner({
+            avatar: avatarPath, 
             linked_with: linked_with || null,
             from,
             to
@@ -172,44 +153,38 @@ exports.createBanner = async (req, res) => {
         await newBanner.save();
 
         res.status(201).json({
-            code : 201,
+            code: 201,
             status: true,
             message: "Banner created successfully",
             data: newBanner
         });
 
     } catch (error) {
+        if (req.file) deleteLocalFile(`uploads/banners/${req.file.filename}`);
         handleError(res, error, "Error creating banner");
     }
 };
 
-// Update an existing banner
+// Update Banner
 exports.updateBanner = async (req, res) => {
     try {
         const { id } = req.params; 
         const { linked_with, from, to, status } = req.body;
-         
-        const newAvatarFile = req.files ? req.files.avatar : null; 
+        const newAvatarFile = req.file; 
+
         const banner = await Banner.findById(id);
 
-        if (!banner) {
-            return res.status(404).json({ 
-                code : 404,
-                status: false, 
-                message: "Banner not found"
-             });
-        }
-         
+        if (!banner) return res.status(404).json({ code : 404, status: false, message: "Banner not found" });
+        
         if (from && to && new Date(to) < new Date(from)) {
-             return res.status(400).json({ 
-                 code : 400,
-                 status: false, 
-                 message: "To date must be after From date" 
-             });
+             return res.status(400).json({ code : 400, status: false, message: "To date must be after From date" });
         }
   
-        if (newAvatarFile) { 
-            banner.avatar = await uploadFileToS3(newAvatarFile);
+        if (newAvatarFile) {  
+            if (banner.avatar) deleteLocalFile(banner.avatar);
+ 
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            banner.avatar = `${baseUrl}/uploads/banners/${newAvatarFile.filename}`;
         }
  
         banner.linked_with = linked_with !== undefined ? linked_with : banner.linked_with;
