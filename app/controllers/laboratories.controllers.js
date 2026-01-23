@@ -4,54 +4,38 @@ const LaboratoryPackage = require('../models/laboratorypackage.model');
 const Category = require('../models/category.model'); 
 const Package = require('../models/packages.model');  
 const mongoose = require('mongoose');
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-const dotenv = require('dotenv'); 
-const fs = require('fs');
+const path = require('path');
+const fs = require('fs'); 
 
-dotenv.config();
+// Helper: Delete file from local storage 
+const deleteLocalFile = (filePath) => {
+    if (!filePath) return;  
 
-const s3 = new S3Client({
-  region: process.env.AWS_DEFAULT_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+    let relativePath = filePath;
+   
+    if (filePath.startsWith('http')) {
+        const splitArr = filePath.split('/uploads/');
+        if (splitArr.length > 1) {
+            relativePath = `uploads/${splitArr[1]}`;
+        }
+    }
 
-// Sanitize filenames
-const sanitizeFileName = (fileName) => {
-  let sanitizedFileName = fileName
-    .replace(/[^a-zA-Z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .toLowerCase();
-  return sanitizedFileName.length > 5
-    ? sanitizedFileName.substring(0, 50)
-    : sanitizedFileName;
+    const fullPath = path.join(__dirname, '../../', relativePath); 
+    
+    if (fs.existsSync(fullPath)) {
+        fs.unlink(fullPath, (err) => {
+            if (err) console.error("Error deleting file:", err);
+            else console.log("File deleted successfully:", fullPath);
+        });
+    }
 };
+  
+const getFileUrl = (req, filePath) => {
+    if (!filePath) return null;
+    if (filePath.startsWith('http')) return filePath;  
 
-// Upload file to S3
-const uploadFileToS3 = async (file) => {    
-  if (!file) return null;
-
-  const sanitizedImageName = sanitizeFileName(file.name);
-  const filePath = `laboratories/${Date.now()}_${sanitizedImageName}`;
-
-  const uploadParams = {
-    Bucket: process.env.AWS_BUCKET,
-    Key: filePath,
-    Body: fs.createReadStream(file.tempFilePath),
-    ContentType: file.mimetype,
-  };
-
-  try {
-    await s3.send(new PutObjectCommand(uploadParams));
-    fs.unlinkSync(file.tempFilePath);
-    return `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_DEFAULT_REGION}.amazonaws.com/${filePath}`;
-  } catch (error) {
-    console.error("Error uploading to S3:", error);
-    if (fs.existsSync(file.tempFilePath)) fs.unlinkSync(file.tempFilePath);
-    throw new Error("S3 upload failed");
-  }
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    return `${req.protocol}://${req.get('host')}/${normalizedPath}`;
 };
 
 // Helper function for error responses
@@ -152,10 +136,11 @@ exports.createLaboratory = async (req, res) => {
             name, owner, contact_1, contact_2, email,
             address_1, address_2, city, state, zipcode
         } = req.body;
-         
-        const logoFile = req.files ? req.files.logo : null;
+          
+        const logoFile = req.file; 
 
-        if (!name || !owner || !contact_1 || !email || !address_1 || !city || !state || !zipcode) {
+        if (!name || !owner || !contact_1 || !email || !address_1 || !city || !state || !zipcode) { 
+            if (logoFile) deleteLocalFile(`uploads/laboratories/${logoFile.filename}`);
             return res.status(400).json({ 
                 code: 400,
                 status: false, 
@@ -166,8 +151,9 @@ exports.createLaboratory = async (req, res) => {
         if (!logoFile) {
             return res.status(400).json({ code: 400, status: false, message: "Logo is required" });
         }
- 
-        const logoUrl = await uploadFileToS3(logoFile);
+  
+        const baseUrl = `${req.protocol}://${req.get('host')}`; 
+        const logoUrl = `${baseUrl}/uploads/laboratories/${logoFile.filename}`;
 
         const newLaboratory = new Laboratory({
             logo: logoUrl, 
@@ -185,7 +171,8 @@ exports.createLaboratory = async (req, res) => {
         });
 
     } catch (error) {
-        // Handle unique constraint errors (E11000)
+        if (req.file) deleteLocalFile(`uploads/laboratories/${req.file.filename}`);
+        
         if (error.code === 11000) {
             return res.status(400).json({
                 code: 400,
@@ -202,23 +189,29 @@ exports.updateLaboratory = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-         
-        const newLogoFile = req.files ? req.files.logo : null;
+          
+        const newLogoFile = req.file;
  
         const laboratory = await Laboratory.findById(id);
         if (!laboratory) {
+            if (newLogoFile) deleteLocalFile(`uploads/laboratories/${newLogoFile.filename}`);
             return res.status(404).json({ 
                 code: 404,
                 status: false, 
                 message: "Laboratory not found" 
             });
         }
-  
+   
         delete updateData.logo;
         Object.assign(laboratory, updateData);
-  
+   
         if (newLogoFile) { 
-            laboratory.logo = await uploadFileToS3(newLogoFile);
+            if (laboratory.logo) {
+                deleteLocalFile(laboratory.logo);
+            }
+
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            laboratory.logo = `${baseUrl}/uploads/laboratories/${newLogoFile.filename}`;
         }
 
         await laboratory.save();
@@ -231,6 +224,8 @@ exports.updateLaboratory = async (req, res) => {
         });
 
     } catch (error) { 
+        if (req.file) deleteLocalFile(`uploads/laboratories/${req.file.filename}`);
+
         if (error.code === 11000) {
             return res.status(400).json({
                 code: 400,

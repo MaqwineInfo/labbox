@@ -357,51 +357,46 @@ exports.rejectOrderAdmin = async (req, res) => {
     }
 };
 
-//  Get detailed order view for admin
+//  Get detailed order view for admin 
 exports.getOrderViewAdmin = async (req, res) => {
     try {
         const { id } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ code: 400, status: false, message: "Invalid Order ID format" });
+        if (!mongoose.Types.ObjectId.isValid(id)) { 
+            return res.render('admin/orders', {
+                 title: "Orders", orders: [], query: {}, pagination: null, error: 'Invalid Order ID', success: null 
+            });
         }
         
         const orderData = await Order.findById(id);
 
         if (!orderData) {
-            return res.status(404).json({ 
-                code: 404,
-                status: false, 
-                message: "Order not found" 
+            return res.render('admin/orders', {
+                 title: "Orders", orders: [], query: {}, pagination: null, error: 'Order not found', success: null 
             });
         }
  
         const parentUserId = orderData.patient_id;
 
-        // ==========================================================
-        //         *** આ પ્રોપર કોડ અહીં ઉમેરો ***
-        // આ ચેક BSONError ને અટકાવશે
         if (!parentUserId || !mongoose.Types.ObjectId.isValid(parentUserId)) {
-            return res.status(400).json({
-                code: 400,
-                status: false,
-                message: "Order has an invalid or missing patient_id. Cannot retrieve details."
+             return res.render('admin/view-orders', {
+                title: "Order Details",
+                order: {},
+                error: "Order has an invalid patient ID.",
+                success: null
             });
         }
-        // ==========================================================
- 
-        const [labData, parentUser, childPatients, cartData] = await Promise.all([
-            Laboratory.findById(orderData.laboratory_id), // findById 'null' ને હેન્ડલ કરી શકે છે
-            User.findById(parentUserId),
-            User.find({ parent_id: parentUserId }), 
+  
+        const [labData, parentUser, cartData] = await Promise.all([
+            Laboratory.findById(orderData.laboratory_id),
+            User.findById(parentUserId), 
             Cart.aggregate([
                 {
                     $match: {
-                        user_id: new mongoose.Types.ObjectId(parentUserId), // હવે આ સુરક્ષિત છે
+                        user_id: new mongoose.Types.ObjectId(parentUserId),
                         order_id: new mongoose.Types.ObjectId(id),
                         status: 2
                     }
                 },
-                // ... (તમારું બાકીનું એગ્રીગેશન) ...
                 { $lookup: { from: 'packages', localField: 'package_id', foreignField: '_id', as: 'package' } },
                 { $unwind: { path: '$package', preserveNullAndEmptyArrays: true } },
                 { $lookup: { from: 'orders', localField: 'order_id', foreignField: '_id', as: 'order' } },
@@ -411,7 +406,7 @@ exports.getOrderViewAdmin = async (req, res) => {
                 {
                     $project: {
                         _id: 1,
-                        status: 1,
+                        status: 1, 
                         package_name: {
                             $switch: {
                                 branches: [
@@ -420,10 +415,10 @@ exports.getOrderViewAdmin = async (req, res) => {
                                 ],
                                 default: "unknown"
                             }
-                        },
+                        }, 
                         package_mrp: "$package.mrp",
                         package_dis_price: "$package.dis_price",
-                        prescription_id: "$order.prescription_id",
+                        prescription_id: "$order.prescription_id", 
                         prescription_details: "$prescription.avatar",
                         discount_percentage: {
                             $cond: {
@@ -436,22 +431,48 @@ exports.getOrderViewAdmin = async (req, res) => {
                 },
                 { $sort: { _id: -1 } }
             ])
-        ]);
+        ]); 
 
-        res.status(200).json({
-            code: 200,
-            status: true,
-            data: {
-                OrderData: orderData,
-                LabData: labData,
-                usersData: parentUser,  
-                users: childPatients,  
-                CartData: cartData
-            }
+        const formattedOrder = {
+            _id: orderData._id,
+            id: orderData._id,
+            status: orderData.status,
+            date: orderData.date,
+            prescription_id: orderData.prescription_id,  
+             
+            patient: parentUser ? {
+                name: parentUser.name,
+                contact_no: parentUser.contact_no, 
+                age: parentUser.age,
+                relation: parentUser.relation,
+                gender: parentUser.gender
+            } : null,
+ 
+            lab: labData ? {
+                name: labData.name,
+                contact: labData.contact_1 || labData.contact,
+                email: labData.email,
+                address_1: labData.address_1
+            } : null,
+ 
+            items: cartData || [] 
+        };
+ 
+        res.render('admin/view-orders', {
+            title: "Order Details",
+            order: formattedOrder,  
+            error: null,
+            success: null
         });
 
     } catch (error) {
-        handleError(res, error, "Error getting order view");
+        console.error("Error showing order details:", error);
+        res.render('admin/view-orders', {
+            title: "Order Details",
+            order: {},
+            error: "Server Error: Failed to load order details.",
+            success: null
+        });
     }
 };
 

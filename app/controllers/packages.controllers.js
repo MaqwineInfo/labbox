@@ -6,55 +6,40 @@ const Benefit = require('../models/benefit.model');
 const Criteria = require('../models/criteria.model');
 const Qanda = require('../models/qanda.model');
 const Category = require('../models/category.model');
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-const dotenv = require('dotenv');
 const fs = require('fs');
+const path = require('path');
 
-dotenv.config();
+// Helper: Delete file from local storage
+const deleteLocalFile = (filePath) => {
+    if (!filePath) return;  
 
-const s3 = new S3Client({
-    region: process.env.AWS_DEFAULT_REGION,
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-});
+    let relativePath = filePath;
+  
+    if (filePath.startsWith('http')) {
+        const splitArr = filePath.split('/uploads/');
+        if (splitArr.length > 1) {
+            relativePath = `uploads/${splitArr[1]}`;
+        }
+    }
 
-// Sanitize filenames
-const sanitizeFileName = (fileName) => {
-    let sanitizedFileName = fileName
-        .replace(/[^a-zA-Z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .toLowerCase();
-    return sanitizedFileName.length > 5
-        ? sanitizedFileName.substring(0, 50)
-        : sanitizedFileName;
-};
-
-// Upload file to S3
-const uploadFileToS3 = async (file) => {
-    if (!file) return null;
-
-    const sanitizedImageName = sanitizeFileName(file.name);
-    const filePath = `abn/${Date.now()}_${sanitizedImageName}`;
-
-    const uploadParams = {
-        Bucket: process.env.AWS_BUCKET,
-        Key: filePath,
-        Body: fs.createReadStream(file.tempFilePath),
-        ContentType: file.mimetype,
-    };
-
-    try {
-        await s3.send(new PutObjectCommand(uploadParams));
-        fs.unlinkSync(file.tempFilePath);
-        return `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_DEFAULT_REGION}.amazonaws.com/${filePath}`;
-    } catch (error) {
-        console.error("Error uploading to S3:", error);
-        if (fs.existsSync(file.tempFilePath)) fs.unlinkSync(file.tempFilePath);
-        throw new Error("S3 upload failed");
+    const fullPath = path.join(__dirname, '../../', relativePath); 
+    
+    if (fs.existsSync(fullPath)) {
+        fs.unlink(fullPath, (err) => {
+            if (err) console.error("Error deleting file:", err);
+            else console.log("File deleted successfully:", fullPath);
+        });
     }
 };
+  
+const getFileUrl = (req, filePath) => {
+    if (!filePath) return null;
+    if (filePath.startsWith('http')) return filePath;  
+
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    return `${req.protocol}://${req.get('host')}/${normalizedPath}`;
+};
+
 
 // Helper function for error responses
 const handleError = (res, error, message = "Server Error", code = 500) => {
@@ -464,10 +449,11 @@ exports.createPackage = async (req, res) => {
             fasting, report_in, sample_type, for_what, package_instruction,
             recommended_age, recommended_gender, option, mrp, dis_price
         } = req.body;
+ 
+        const avatarFile = req.file;
 
-        const avatarFile = req.files ? req.files.avatar : null;
-
-        if (!name || !categories_id || !mrp || !dis_price || !short_desc) {
+        if (!name || !categories_id || !mrp || !dis_price || !short_desc) { 
+            if (avatarFile) deleteLocalFile(`uploads/packages/${avatarFile.filename}`);
             return res.status(400).json({
                 code: 400,
                 status: false,
@@ -475,11 +461,15 @@ exports.createPackage = async (req, res) => {
             });
         }
 
-        const avatarUrl = await uploadFileToS3(avatarFile);
+        let avatarUrl = null;
+        if (avatarFile) { 
+            const baseUrl = `${req.protocol}://${req.get('host')}`; 
+            avatarUrl = `${baseUrl}/uploads/packages/${avatarFile.filename}`;
+        }
 
         const newPackage = new Package({
             name,
-            avatar: avatarUrl,
+            avatar: avatarUrl, 
             short_desc,
             long_desc,
             categories_id: Array.isArray(categories_id) ? categories_id : [categories_id],
@@ -505,6 +495,9 @@ exports.createPackage = async (req, res) => {
         });
 
     } catch (error) {
+        // Error આવે તો ફાઈલ ડીલીટ કરો
+        if (req.file) deleteLocalFile(`uploads/packages/${req.file.filename}`);
+        
         if (error.code === 11000) {
             return res.status(400).json({
                 code: 400,
@@ -521,9 +514,12 @@ exports.updatePackage = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-        const newAvatarFile = req.files ? req.files.avatar : null;
+         
+        const newAvatarFile = req.file;
+
         const packageToUpdate = await Package.findById(id);
         if (!packageToUpdate) {
+             if (newAvatarFile) deleteLocalFile(`uploads/packages/${newAvatarFile.filename}`);
             return res.status(404).json({
                 code: 404,
                 status: false,
@@ -534,6 +530,7 @@ exports.updatePackage = async (req, res) => {
         if (updateData.name && updateData.name !== packageToUpdate.name) {
             const existing = await Package.findOne({ name: updateData.name });
             if (existing) {
+                 if (newAvatarFile) deleteLocalFile(`uploads/packages/${newAvatarFile.filename}`);
                 return res.status(400).json({
                     code: 400,
                     status: false,
@@ -543,14 +540,16 @@ exports.updatePackage = async (req, res) => {
         }
 
         Object.assign(packageToUpdate, updateData);
+ 
+        if (newAvatarFile) { 
+            if (packageToUpdate.avatar) {
+                deleteLocalFile(packageToUpdate.avatar);
+            }
+             
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            packageToUpdate.avatar = `${baseUrl}/uploads/packages/${newAvatarFile.filename}`;
+        }
 
-        if (updateData.avatar !== undefined) {
-            packageToUpdate.avatar = updateData.avatar;
-        }
-        if (newAvatarFile) {
-            const newAvatarUrl = await uploadFileToS3(newAvatarFile);
-            packageToUpdate.avatar = newAvatarUrl;
-        }
         await packageToUpdate.save();
 
         res.status(200).json({
@@ -561,6 +560,8 @@ exports.updatePackage = async (req, res) => {
         });
 
     } catch (error) {
+         if (req.file) deleteLocalFile(`uploads/packages/${req.file.filename}`);
+        
         if (error.code === 11000) {
             return res.status(400).json({ status: false, message: "A package with this name already exists" });
         }
@@ -660,13 +661,61 @@ exports.togglePackageStatus = async (req, res) => {
     }
 };
 
+// Get package view for admin (Render EJS)
+exports.packageViewAdmin = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+             return res.render('admin/packages', {
+                title: "Packages", packages: [], categories: [], query: {}, pagination: null, error: 'Invalid Package ID', success: null
+            });
+        }
+
+        const packageData = await Package.findById(id).populate('categories_id', 'name');
+        
+        if (!packageData) {
+            return res.render('admin/packages', {
+                title: "Packages", packages: [], categories: [], query: {}, pagination: null, error: 'Package not found', success: null
+            });
+        }
+ 
+        const [benefits, criteria, qanda] = await Promise.all([
+            Benefit.find({ package_id: id, status: 1 }),
+            Criteria.find({ package_id: id, status: 1 }),
+            Qanda.find({ package_id: id, status: 1 })
+        ]);
+
+        res.render('admin/view-packages', {
+            title: "Package Details",
+            pkg: packageData,  
+            benefits,
+            criteria,
+            qanda,
+            error: null,
+            success: null
+        });
+
+    } catch (error) {
+        console.error("Error fetching package view:", error);
+        res.render('admin/packages', {
+            title: "Packages",
+            packages: [],
+            categories: [],
+            query: {},
+            pagination: null,
+            error: 'Server Error: Failed to load package details.',
+            success: null
+        });
+    }
+};
+
 // =================================================================
 //      ADMIN PACKAGE VIEW - RELATED DATA (Benefit, Criteria, Q&A)
 // =================================================================
 
 //  Add a Benefit to a package
-exports.
-    addBenefit = async (req, res) => {
+exports.addBenefit = async (req, res) => {
         try {
             const package_id = req.params.id;
             const { text, avatar } = req.body;

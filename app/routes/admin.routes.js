@@ -34,29 +34,30 @@ router.get('/dashboard', auth,  dashboard.dashboard);
 
 // ******* Banner Routes ********
 router.get('/banners', auth ,  benner.banners);
-router.post('/banners', auth , upload.single('avatar'), benner.createBanner);
-router.put('/banners/:id', auth , upload.single('avatar'), benner.updateBanner);
+router.post('/banners', auth , upload('banners').single('avatar'), benner.createBanner);
+router.put('/banners/:id', auth , upload('banners').single('avatar'), benner.updateBanner);
 router.patch('/banners/:id/toggle-status', auth , benner.toggleBannerStatus);
 router.delete('/banners/:id', auth , benner.deleteBanner); 
 
 // ******* Category Routes ********
 router.get('/categories', auth , categories.categories);
-router.post('/categories', auth , categories.createCategory);
-router.put('/categories/:id', auth , categories.updateCategory);
+router.post('/categories', auth , upload('categories').single('avatar'), categories.createCategory);
+router.put('/categories/:id', auth , upload('categories').single('avatar'), categories.updateCategory);
 router.patch('/categories/:id/toggle-status', auth , categories.toggleCategoryStatus);
 router.delete('/categories/:id', auth , categories.deleteCategory);
 
 // ******* Report Routes ********
  
 router.get('/reports', auth, reports.reports);  
-router.post('/report/update/:id', auth, reports.uploadReportFileAdmin);
+router.post('/report/update/:id', auth, upload('reports').single('avatar'), reports.uploadReportFileAdmin);
 router.delete('/report/delete/:id', auth, reports.deleteReportAdmin);
 
 // ******* Package Routes ********
 router.get('/packages', auth ,  packages.packages);
 router.get('/packages/:id', auth ,  packages.getPackageViewAdmin);
-router.post('/packages', auth , packages.createPackage);
-router.put('/packages/:id', auth , packages.updatePackage);
+router.post('/packages', auth , upload('packages').single('avatar'), packages.createPackage);
+router.put('/packages/:id', auth , upload('packages').single('avatar'), packages.updatePackage);
+router.get('/packages/view/:id', auth ,  packages.packageViewAdmin);
 router.patch('/packages/:id/toggle-status', auth , packages.togglePackageStatus);
 router.delete('/packages/:id', auth , packages.deletePackage);
 
@@ -76,8 +77,9 @@ router.delete('/packages/:id/qanda/:qandaId', auth , packages.deleteQanda);
 // ******* Sub-Package Routes ********
 // router.get('/sub-packages', auth , subpackages.getAllSubPackagesAdmin);
 router.get('/sub-packages', auth, subpackages.subPackages);
-router.post('/sub-packages', auth , subpackages.createSubPackage);
-router.put('/sub-packages/:id', auth , subpackages.updateSubPackage);
+router.post('/sub-packages', auth , upload('packages').single('avatar'), subpackages.createSubPackage);
+router.put('/sub-packages/:id', auth , upload('packages').single('avatar'), subpackages.updateSubPackage);
+router.get('/sub-packages/:id', auth , subpackages.getSubPackageById);
 router.delete('/sub-packages/:id', auth , subpackages.deleteSubPackage);
 router.patch('/sub-packages/:id/toggle-status', auth , subpackages.toggleSubPackageStatus);
 router.get('/sub-packages/:id/packages', auth , subpackages.getSubPackagePackageList);
@@ -104,8 +106,8 @@ router.patch('/orders/:id/reject', auth, order.rejectOrderAdmin);
 router.get('/laboratory', auth, laboratories.laboratory); 
 router.get('/laboratory/view/:id', auth, laboratories.viewLaboratory);
  
-router.post('/laboratory/add', auth, laboratories.createLaboratory);
-router.post('/laboratory/update/:id', auth, laboratories.updateLaboratory);  
+router.post('/laboratory/add', auth, upload('laboratories').single('logo'), laboratories.createLaboratory);
+router.post('/laboratory/update/:id', auth, upload('laboratories').single('logo'), laboratories.updateLaboratory);  
 router.delete('/laboratory/delete/:id', auth, laboratories.deleteLaboratory);
 router.patch('/laboratory/status/:id', auth, laboratories.toggleLaboratoryStatus); 
  
@@ -126,8 +128,8 @@ router.patch('/patients/status/:id', auth, patient.togglePatientStatusAdmin);
 // ******* Offer Routes ********
 router.get('/offers', auth, offer.offers); 
  
-router.post('/offers/add', auth, offer.createOffer);
-router.post('/offers/update/:id', auth, offer.updateOffer);  
+router.post('/offers/add', auth, upload('offers').single('avatar'), offer.createOffer);
+router.post('/offers/update/:id', auth, upload('offers').single('avatar'), offer.updateOffer);  
 router.delete('/offers/delete/:id', auth, offer.deleteOffer);
 router.patch('/offers/status/:id', auth, offer.toggleOfferStatus);  
 

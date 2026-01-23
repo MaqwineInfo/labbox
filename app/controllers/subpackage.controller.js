@@ -2,53 +2,30 @@ const SubPackage = require('../models/subpackage.model');
 const Package = require('../models/packages.model');
 const Category = require('../models/category.model');
 const mongoose = require('mongoose');
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-const dotenv = require('dotenv');
 const fs = require('fs');
+const path = require('path');
 
-dotenv.config();
+// Helper: Delete file from local storage
+const deleteLocalFile = (filePath) => {
+    if (!filePath) return;  
 
-const s3 = new S3Client({
-    region: process.env.AWS_DEFAULT_REGION,
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-});
+    let relativePath = filePath;
+  
+    // જો DB માં Full URL હોય, તો તેને Relative Path માં કન્વર્ટ કરો
+    if (filePath.startsWith('http')) {
+        const splitArr = filePath.split('/uploads/');
+        if (splitArr.length > 1) {
+            relativePath = `uploads/${splitArr[1]}`;
+        }
+    }
 
-// Sanitize filenames
-const sanitizeFileName = (fileName) => {
-    let sanitizedFileName = fileName
-        .replace(/[^a-zA-Z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .toLowerCase();
-    return sanitizedFileName.length > 5
-        ? sanitizedFileName.substring(0, 50)
-        : sanitizedFileName;
-};
-
-// Upload file to S3
-const uploadFileToS3 = async (file) => {
-    if (!file) return null;
-
-    const sanitizedImageName = sanitizeFileName(file.name);
-    const filePath = `abn/${Date.now()}_${sanitizedImageName}`;
-
-    const uploadParams = {
-        Bucket: process.env.AWS_BUCKET,
-        Key: filePath,
-        Body: fs.createReadStream(file.tempFilePath),
-        ContentType: file.mimetype,
-    };
-
-    try {
-        await s3.send(new PutObjectCommand(uploadParams));
-        fs.unlinkSync(file.tempFilePath);
-        return `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_DEFAULT_REGION}.amazonaws.com/${filePath}`;
-    } catch (error) {
-        console.error("Error uploading to S3:", error);
-        if (fs.existsSync(file.tempFilePath)) fs.unlinkSync(file.tempFilePath);
-        throw new Error("S3 upload failed");
+    const fullPath = path.join(__dirname, '../../', relativePath); 
+    
+    if (fs.existsSync(fullPath)) {
+        fs.unlink(fullPath, (err) => {
+            if (err) console.error("Error deleting file:", err);
+            else console.log("File deleted successfully:", fullPath);
+        });
     }
 };
 
@@ -88,7 +65,7 @@ exports.getActiveSubPackages = async (req, res) => {
 //                 ADMIN-ONLY API
 // ================================================================= 
 
-//    Get all sub-packages with filters  
+// Get all sub-packages with filters  
 exports.getAllSubPackagesAdmin = async (req, res) => {
     try {
         const { name, status, category: categoryID, package: packageID, page = 1, limit = 10 } = req.query;
@@ -161,11 +138,10 @@ exports.getAllSubPackagesAdmin = async (req, res) => {
     }
 };
 
-// Render sub-packages page with filters and pagination
+// Render sub-packages page with filters and pagination 
 exports.subPackages = async (req, res) => {
     try {
         const { name, status, category: categoryID, package: packageID, page = 1, limit = 10 } = req.query;
- 
         const query = { status: { $ne: 2 } };  
 
         if (name) {
@@ -192,10 +168,7 @@ exports.subPackages = async (req, res) => {
  
         const [subPackagesData, allCategories, allPackagesData] = await Promise.all([
             SubPackage.find(query)
-                .populate({
-                    path: 'packages_id',
-                    select: 'name'
-                })  
+                .populate({ path: 'packages_id', select: 'name' })  
                 .sort({ createdAt: -1 })
                 .limit(limitNum)
                 .skip(skip),
@@ -236,36 +209,36 @@ exports.subPackages = async (req, res) => {
     }
 };
 
-//   Create a new sub-package
+// Create a new sub-package
 exports.createSubPackage = async (req, res) => {
     try {
         const {
             name, short_desc, long_desc, mrp, dis_price, parameter, packages_id
         } = req.body;
- 
-        const avatarFile = req.files ? req.files.avatar : null;
+  
+        const avatarFile = req.file; 
 
         if (!name || !packages_id) {
+            if (avatarFile) deleteLocalFile(`uploads/packages/${avatarFile.filename}`);
             return res.status(400).json({
                 code: 400,
                 status: false,
                 message: "Name and packages_id are required"
             });
         }
-
-        let packagesIdArray = packages_id;
-        if (typeof packages_id === 'string') {
-            packagesIdArray = packages_id.split(',');
-        }
-        if (!Array.isArray(packagesIdArray) || packagesIdArray.length === 0) {
-            return res.status(400).json({
-                code: 400,
-                status: false,
-                message: "packages_id must be a non-empty array"
-            });
-        }
  
-        const avatarUrl = await uploadFileToS3(avatarFile);
+        let packagesIdArray = packages_id;
+        if (typeof packages_id === 'string') { 
+            packagesIdArray = packages_id.includes(',') ? packages_id.split(',') : [packages_id];
+        } else if (!Array.isArray(packages_id)) {
+             packagesIdArray = [packages_id];
+        }
+  
+        let avatarUrl = null;
+        if (avatarFile) {
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            avatarUrl = `${baseUrl}/uploads/packages/${avatarFile.filename}`;
+        }
 
         const newSubPackage = new SubPackage({
             name,
@@ -288,6 +261,7 @@ exports.createSubPackage = async (req, res) => {
         });
 
     } catch (error) {
+        if (req.file) deleteLocalFile(`uploads/packages/${req.file.filename}`);
         if (error.code === 11000) {
             return res.status(400).json({
                 code: 400,
@@ -299,40 +273,42 @@ exports.createSubPackage = async (req, res) => {
     }
 };
 
-//  Update an existing sub-package
+// Update an existing sub-package
 exports.updateSubPackage = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-        const newAvatarFile = req.files ? req.files.avatar : null;
+         
+        const newAvatarFile = req.file;
+        
         const subPackage = await SubPackage.findById(id);
         if (!subPackage) {
+            if (newAvatarFile) deleteLocalFile(`uploads/packages/${newAvatarFile.filename}`);
             return res.status(404).json({
                 code: 404,
                 status: false,
                 message: "Sub-package not found"
             });
         }
-
-        if (!updateData.name || !updateData.packages_id) {
-            return res.status(400).json({
-                code: 400,
-                status: false,
-                message: "Name and packages_id are required"
-            });
-        }
-        if (!Array.isArray(updateData.packages_id) || updateData.packages_id.length === 0) {
-            return res.status(400).json({
-                code: 400,
-                status: false,
-                message: "packages_id must be a non-empty array"
-            });
+ 
+        if (updateData.packages_id) {
+            let packagesIdArray = updateData.packages_id;
+            if (typeof packagesIdArray === 'string') {
+                packagesIdArray = packagesIdArray.includes(',') ? packagesIdArray.split(',') : [packagesIdArray];
+            } else if (!Array.isArray(packagesIdArray)) {
+                packagesIdArray = [packagesIdArray];
+            }
+            updateData.packages_id = packagesIdArray;
         }
 
         Object.assign(subPackage, updateData);
-
-        if (updateData.avatar !== undefined) {
-            subPackage.avatar = updateData.avatar;
+ 
+        if (newAvatarFile) {
+            if (subPackage.avatar) {
+                deleteLocalFile(subPackage.avatar);
+            }
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            subPackage.avatar = `${baseUrl}/uploads/packages/${newAvatarFile.filename}`;
         }
 
         await subPackage.save();
@@ -345,13 +321,7 @@ exports.updateSubPackage = async (req, res) => {
         });
 
     } catch (error) {
-        if (error.code === 11000) {
-            return res.status(400).json({
-                code: 400,
-                status: false,
-                message: "A sub-package with this name already exists"
-            });
-        }
+        if (req.file) deleteLocalFile(`uploads/packages/${req.file.filename}`);
         handleError(res, error, "Error updating sub-package");
     }
 };
@@ -383,6 +353,30 @@ exports.deleteSubPackage = async (req, res) => {
 
     } catch (error) {
         handleError(res, error, "Error deleting sub-package");
+    }
+};
+
+// get by id
+exports.getSubPackageById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const subPackage = await SubPackage.findById(id).populate('packages_id');
+
+        if (!subPackage) {
+            return res.status(404).json({
+                code: 404,
+                status: false,
+                message: "Sub-Package not found"
+            });
+        }
+        res.status(200).json({
+            code: 200,
+            status: true,
+            message: "Sub-Package retrieved",
+            data: subPackage
+        });
+    } catch (error) {
+        handleError(res, error, "Error retrieving sub-package");
     }
 };
 
@@ -487,4 +481,3 @@ exports.removePackageFromSubPackage = async (req, res) => {
         handleError(res, error, "Error removing package from sub-package");
     }
 };
-

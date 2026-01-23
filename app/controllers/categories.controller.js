@@ -1,53 +1,37 @@
 const Category = require('../models/category.model');   
 const Package = require('../models/packages.model'); 
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-const dotenv = require('dotenv'); 
 const fs = require('fs');
+const path = require('path');
 
-dotenv.config();
+// Helper: Delete file from local storage
+const deleteLocalFile = (filePath) => {
+    if (!filePath) return;  
 
-const s3 = new S3Client({
-  region: process.env.AWS_DEFAULT_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+    let relativePath = filePath;
+  
+    if (filePath.startsWith('http')) {
+        const splitArr = filePath.split('/uploads/');
+        if (splitArr.length > 1) {
+            relativePath = `uploads/${splitArr[1]}`;
+        }
+    }
 
-// Sanitize filenames
-const sanitizeFileName = (fileName) => {
-  let sanitizedFileName = fileName
-    .replace(/[^a-zA-Z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .toLowerCase();
-  return sanitizedFileName.length > 5
-    ? sanitizedFileName.substring(0, 50)
-    : sanitizedFileName;
+    const fullPath = path.join(__dirname, '../../', relativePath); 
+    
+    if (fs.existsSync(fullPath)) {
+        fs.unlink(fullPath, (err) => {
+            if (err) console.error("Error deleting file:", err);
+            else console.log("File deleted successfully:", fullPath);
+        });
+    }
 };
+  
+const getFileUrl = (req, filePath) => {
+    if (!filePath) return null;
+    if (filePath.startsWith('http')) return filePath;  
 
-// Upload file to S3
-const uploadFileToS3 = async (file) => {    
-  if (!file) return null;
-
-  const sanitizedImageName = sanitizeFileName(file.name);
-  const filePath = `abn/${Date.now()}_${sanitizedImageName}`;
-
-  const uploadParams = {
-    Bucket: process.env.AWS_BUCKET,
-    Key: filePath,
-    Body: fs.createReadStream(file.tempFilePath),
-    ContentType: file.mimetype,
-  };
-
-  try {
-    await s3.send(new PutObjectCommand(uploadParams));
-    fs.unlinkSync(file.tempFilePath);
-    return `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_DEFAULT_REGION}.amazonaws.com/${filePath}`;
-  } catch (error) {
-    console.error("Error uploading to S3:", error);
-    if (fs.existsSync(file.tempFilePath)) fs.unlinkSync(file.tempFilePath);
-    throw new Error("S3 upload failed");
-  }
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    return `${req.protocol}://${req.get('host')}/${normalizedPath}`;
 };
 
 // Helper function for error responses
@@ -140,11 +124,12 @@ exports.getAllCategoriesAdmin = async (req, res) => {
     }
 };
 
-// Create a new category
+// Create a new category 
 exports.createCategory = async (req, res) => {
     try { 
         const { name, long_desc, short_desc } = req.body; 
-        const avatarFile = req.files ? req.files.avatar : null;
+         
+        const avatarFile = req.file; 
 
         if (!name || !long_desc || !short_desc) {
             return res.status(400).json({ 
@@ -163,17 +148,20 @@ exports.createCategory = async (req, res) => {
         }
 
         const existingCategory = await Category.findOne({ name });
-        if (existingCategory) {
+        if (existingCategory) { 
+            if (avatarFile) deleteLocalFile(`uploads/categories/${avatarFile.filename}`);
             return res.status(400).json({ 
                 code : 400,
                 status: false, 
                 message: "A category with this name already exists" 
             });
-        }
-         
+        } 
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const avatarPath = `${baseUrl}/uploads/categories/${avatarFile.filename}`;
+
         const newCategory = new Category({
             name,
-            avatar: await uploadFileToS3(avatarFile), 
+            avatar: avatarPath, 
             long_desc,
             short_desc 
         });
@@ -187,17 +175,18 @@ exports.createCategory = async (req, res) => {
             data: newCategory
         });
 
-    } catch (error) {
+    } catch (error) { 
+        if (req.file) deleteLocalFile(`uploads/categories/${req.file.filename}`);
         handleError(res, error, "Error creating category");
     }
 };
 
-//  Update an existing category  
+// Update an existing category  
 exports.updateCategory = async (req, res) => {
     try {
         const { id } = req.params; 
         const { name, long_desc, short_desc } = req.body; 
-        const newAvatarFile = req.files ? req.files.avatar : null;
+        const newAvatarFile = req.file; 
 
         const category = await Category.findById(id);
 
@@ -220,6 +209,7 @@ exports.updateCategory = async (req, res) => {
         if (name !== category.name) {
             const existingCategory = await Category.findOne({ name });
             if (existingCategory) {
+                if (newAvatarFile) deleteLocalFile(`uploads/categories/${newAvatarFile.filename}`);
                 return res.status(400).json({ 
                     code : 400,
                     status: false, 
@@ -232,8 +222,11 @@ exports.updateCategory = async (req, res) => {
         category.long_desc = long_desc;
         category.short_desc = short_desc;
  
-        if (newAvatarFile) { 
-            category.avatar = await uploadFileToS3(newAvatarFile);
+        if (newAvatarFile) {  
+            if (category.avatar) deleteLocalFile(category.avatar);
+            
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            category.avatar = `${baseUrl}/uploads/categories/${newAvatarFile.filename}`;
         }
 
         await category.save();
@@ -246,6 +239,7 @@ exports.updateCategory = async (req, res) => {
         });
 
     } catch (error) {
+        if (req.file) deleteLocalFile(`uploads/categories/${req.file.filename}`);
         handleError(res, error, "Error updating category");
     }
 };

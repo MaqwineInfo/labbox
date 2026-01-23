@@ -5,52 +5,30 @@ const Prescription = require('../models/prescription.model');
 const Address = require('../models/address.model');
 const mongoose = require('mongoose');
 
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-const dotenv = require('dotenv'); 
 const fs = require('fs');
+const path = require('path');
 
-dotenv.config();
+// Helper: Delete file from local storage
+const deleteLocalFile = (filePath) => {
+    if (!filePath) return;  
 
-const s3 = new S3Client({
-  region: process.env.AWS_DEFAULT_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+    let relativePath = filePath;
+   
+    if (filePath.startsWith('http')) {
+        const splitArr = filePath.split('/uploads/');
+        if (splitArr.length > 1) {
+            relativePath = `uploads/${splitArr[1]}`;
+        }
+    }
 
-const sanitizeFileName = (fileName) => {
-  let sanitizedFileName = fileName
-    .replace(/[^a-zA-Z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .toLowerCase();
-  return sanitizedFileName.length > 5
-    ? sanitizedFileName.substring(0, 50)
-    : sanitizedFileName;
-};
-
-const uploadFileToS3 = async (file) => {    
-  if (!file) return null;
-
-  const sanitizedImageName = sanitizeFileName(file.name);
-  const filePath = `reports/${Date.now()}_${sanitizedImageName}`;  
-
-  const uploadParams = {
-    Bucket: process.env.AWS_BUCKET,
-    Key: filePath,
-    Body: fs.createReadStream(file.tempFilePath),
-    ContentType: file.mimetype,
-  };
-
-  try {
-    await s3.send(new PutObjectCommand(uploadParams));
-    fs.unlinkSync(file.tempFilePath);
-    return `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_DEFAULT_REGION}.amazonaws.com/${filePath}`;
-  } catch (error) {
-    console.error("Error uploading to S3:", error);
-    if (fs.existsSync(file.tempFilePath)) fs.unlinkSync(file.tempFilePath);
-    throw new Error("S3 upload failed");
-  }
+    const fullPath = path.join(__dirname, '../../', relativePath); 
+    
+    if (fs.existsSync(fullPath)) {
+        fs.unlink(fullPath, (err) => {
+            if (err) console.error("Error deleting file:", err);
+            else console.log("File deleted successfully:", fullPath);
+        });
+    }
 };
 
 // Helper function for error responses
@@ -279,26 +257,38 @@ exports.getAllReportsAdmin = async (req, res) => {
 exports.uploadReportFileAdmin = async (req, res) => {
     try {
         const { id } = req.params;
-        const { avatar } = req.body;  
+         
+        const reportFile = req.file;  
 
-        if (!avatar) {
+        if (!reportFile) {
             return res.status(400).json({ 
                 code: 400,
                 status: false,
-                message: "Avatar (file URL) is required"
+                message: "Report file is required"
             });
         }
 
         const order = await Order.findById(id);
-        if (!order) {
+        if (!order) { 
+            deleteLocalFile(`uploads/reports/${reportFile.filename}`);
             return res.status(404).json({ 
                 code: 404, 
                 status: false, 
                 message: "Order not found" 
             });
         } 
+         
+        if (order.avatar) {
+            deleteLocalFile(order.avatar);
+        }
+ 
+        const baseUrl = `${req.protocol}://${req.get('host')}`; 
+        const fullUrl = `${baseUrl}/uploads/reports/${reportFile.filename}`;
+
+        order.avatar = fullUrl; 
+        // Status update to 'report_generated' (5) if needed
+        order.status = 5; 
         
-        order.avatar = avatar;  
         await order.save();
 
         res.status(200).json({
@@ -309,6 +299,7 @@ exports.uploadReportFileAdmin = async (req, res) => {
         });
 
     } catch (error) {
+        if (req.file) deleteLocalFile(`uploads/reports/${req.file.filename}`);
         handleError(res, error, "Error uploading report file");
     }
 };
@@ -390,5 +381,3 @@ exports.getReportUrlUser = async (req, res) => {
         handleError(res, error, "Error fetching report URL");
     }
 };
-
- 

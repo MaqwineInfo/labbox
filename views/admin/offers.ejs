@@ -14,12 +14,10 @@
         <div class="page-content">
             <div class="container-fluid">
 
-                <!-- Page Title & Add Button -->
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
                             <h4 class="page-title">Offers</h4>
-                            <%# Add permission check if needed %>
                             <button type="button" class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#addOfferModal">
                                 Add Offer
                             </button>
@@ -27,7 +25,6 @@
                     </div>
                 </div>
 
-                <!-- Error/Success Messages -->
                 <div class="row">
                     <div class="col-12">
                         <% if (typeof error !== 'undefined' && error) { %>
@@ -39,7 +36,6 @@
                     </div>
                 </div>
 
-                <!-- Offer Table -->
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
@@ -48,7 +44,6 @@
                             </div>
                             <div class="card-body">
                                 
-                                <!-- Filters and Search -->
                                 <div class="d-flex flex-wrap justify-content-between mb-3">
                                     <form class="d-flex" id="searchForm" action="/admin/offers" method="GET">
                                         <input class="form-control me-2" type="search" placeholder="Search by Link" name="linked_with" value="<%= typeof query !== 'undefined' ? query.linked_with : '' %>">
@@ -70,7 +65,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Table -->
                                 <div class="table-responsive">
                                     <table class="table table-striped table-hover" id="offerTable">
                                         <thead>
@@ -102,18 +96,21 @@
                                                         </td>
                                                         <td>
                                                             <div class="dropdown">
-                                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle edit-Offer-link" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-                                                                    data-id="<%= b._id %>"
-                                                                    data-avatar="<%= b.avatar %>"
-                                                                    data-linked_with="<%= b.linked_with %>"
-                                                                    data-from="<%= b.from ? new Date(b.from).toLocaleDateString('en-CA') : '' %>"
-                                                                    data-to="<%= b.to ? new Date(b.to).toLocaleDateString('en-CA') : '' %>">
+                                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                                     Action
                                                                 </button>
+                                                                
                                                                 <ul class="dropdown-menu">
                                                                     <li>
-                                                                        <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editOfferModal">
-                                                                            Edit
+                                                                        <a class="dropdown-item edit-Offer-link" href="#" 
+                                                                           data-bs-toggle="modal" 
+                                                                           data-bs-target="#editOfferModal"
+                                                                           data-id="<%= b._id %>"
+                                                                           data-avatar="<%= b.avatar %>"
+                                                                           data-linked_with="<%= b.linked_with %>"
+                                                                           data-from="<%= b.from ? new Date(b.from).toLocaleDateString('en-CA') : '' %>"
+                                                                           data-to="<%= b.to ? new Date(b.to).toLocaleDateString('en-CA') : '' %>">
+                                                                           Edit
                                                                         </a>
                                                                     </li>
                                                                     <li>
@@ -129,7 +126,7 @@
                                                                     </li>
                                                                 </ul>
                                                             </div>
-                                                        </td>
+                                                            </td>
                                                     </tr>
                                                 <% }); %>
                                             <% } else { %>
@@ -140,29 +137,13 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <!-- Pagination (Add if needed) -->
                             </div>
                         </div>
                     </div>
                 </div>
 
-            </div> <!-- container-fluid -->
-
-            <!-- Appearance Offcanvas -->
-            <div class="offcanvas offcanvas-end" tabindex="-1" id="Appearance" aria-labelledby="AppearanceLabel">
-                <div class="offcanvas-header border-bottom justify-content-between">
-                    <h5 class="m-0 font-14" id="AppearanceLabel">Appearance</h5>
-                    <button type="button" class="btn-close text-reset p-0 m-0 align-self-center" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                </div>
-                <div class="offcanvas-body"></div>
-            </div>
-
+            </div> </div>
         </div>
-        <!-- end page content -->
-    </div>
-    <!-- end page-wrapper -->
-
-    <!-- Add Offer Modal -->
     <div class="modal fade" id="addOfferModal" tabindex="-1" aria-labelledby="addOfferModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -200,7 +181,6 @@
         </div>
     </div>
 
-    <!-- Edit Offer Modal -->
     <div class="modal fade" id="editOfferModal" tabindex="-1" aria-labelledby="editOfferModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -242,7 +222,6 @@
         </div>
     </div>
 
-    <!-- Delete/Action Confirmation Modal -->
     <div class="modal fade" id="actionModal" tabindex="-1" role="dialog" aria-labelledby="actionModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -263,14 +242,15 @@
 
     <%- include('../partials/scripts') %>
 
-    <!-- Page Specific Scripts -->
     <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const authToken = 'Bearer ' + localStorage.getItem('authToken');
 
         // 1. Handle Edit Modal
         const editModal = document.getElementById('editOfferModal');    
         editModal.addEventListener('show.bs.modal', function (event) {
-            const button = event.relatedTarget.closest('.edit-Offer-link');
+            // Updated: Now targeting the relatedTarget directly (which is the <a> tag)
+            const button = event.relatedTarget;
             
             const offer = {
                 id: button.getAttribute('data-id'), 
@@ -279,32 +259,34 @@
                 from: button.getAttribute('data-from'), 
                 to: button.getAttribute('data-to') 
             };
+
             const modal = this; 
             modal.querySelector('#editOfferId').value = offer.id; 
             modal.querySelector('#editLink').value = offer.linked_with; 
             modal.querySelector('#editfrom').value = offer.from; 
-            modal.querySelector('#editTo').value = offer.to; 
+            modal.querySelector('#editTo').value = offer.to;
             
-            // Set form action
-            modal.querySelector('#editOfferForm').action = `/admin/offers/update/${offer.id}`; 
-            
+            // Set form action correctly for UPDATE
+            modal.querySelector('#editOfferForm').action = `/admin/offers/update/${offer.id}`;
+
             // Update image preview
-            const preview = modal.querySelector('#editOfferImagePreview'); 
+            const preview = modal.querySelector('#editOfferImagePreview');
             if (offer.avatar && offer.avatar !== 'null' && offer.avatar !== 'NULL') { 
-                preview.src = offer.avatar; 
+                preview.src = offer.avatar;
                 preview.style.display = 'block'; 
             } else {
-                preview.src = ''; 
+                preview.src = '';
                 preview.style.display = 'none'; 
             }
         });
 
         // 2. Handle Action Confirmation Modal
-        const actionModal = new bootstrap.Modal(document.getElementById('actionModal')); 
+        const actionModal = new bootstrap.Modal(document.getElementById('actionModal'));
         const confirmActionBtn = document.getElementById('confirmAction'); 
         const confirmationMessage = document.getElementById('confirmationMessage'); 
         let actionUrl = ''; 
-        let httpMethod = 'POST'; 
+        let httpMethod = 'POST';
+
         document.querySelectorAll('.action-btn').forEach(button => { 
             button.addEventListener('click', function (e) { 
                 e.preventDefault(); 
@@ -318,14 +300,14 @@
                 } else if (action === 'inactive') {
                     confirmationMessage.innerText = 'Are you sure to Inactive this Offer?'; 
                     actionUrl = `/admin/offers/status/${offerId}`; 
-                    httpMethod = 'PATCH'; // <-- SUDHARO 1 (POST nu PATCH karyu)
+                    httpMethod = 'PATCH';
                 } else if (action === 'active') {
                     confirmationMessage.innerText = 'Are you sure to Active this Offer?'; 
-                    actionUrl = `/admin/offers/status/${offerId}`; 
-                    httpMethod = 'PATCH'; // <-- SUDHARO 2 (POST nu PATCH karyu)
+                    actionUrl = `/admin/offers/status/${offerId}`;
+                    httpMethod = 'PATCH';
                 }
                 
-                actionModal.show(); 
+                actionModal.show();
             });
         });
 
@@ -337,15 +319,15 @@
                         method: httpMethod, 
                         headers: { 
                             'Content-Type': 'application/json', 
-                            // <-- SUDHARO 3: Authentication token add karyu
-                            'Authorization': 'Bearer ' + localStorage.getItem('authToken') 
+                            'Authorization': authToken 
                         }
                     });
                     if (response.ok) { 
                         actionModal.hide(); 
                         location.reload(); 
                     } else {
-                        alert('Failed to perform action.'); 
+                        const err = await response.json();
+                        alert(err.message || 'Failed to perform action.'); 
                         actionModal.hide();
                     }
                 } catch (error) {
@@ -357,10 +339,10 @@
 
         // 3. Handle Form Submissions
         handleFormSubmit('addOfferForm');   
-        handleFormSubmit('editOfferForm'); 
+        handleFormSubmit('editOfferForm');
 
         function handleFormSubmit(formId) { 
-            const form = document.getElementById(formId); 
+            const form = document.getElementById(formId);
             form.addEventListener('submit', async function(event) { 
                 event.preventDefault(); 
                 const submitButton = form.querySelector('button[type="submit"]'); 
@@ -372,30 +354,29 @@
                     const response = await fetch(form.action, {
                         method: 'POST', 
                         body: formData, 
-                        // <-- SUDHARO 4: Form data (file upload) mate 'Authorization' header add karyu
                         headers: {
-                            'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+                            'Authorization': authToken
                         }
                     });
 
                     if (response.ok) { 
                         const modalId = form.closest('.modal').id; 
                         const modal = bootstrap.Modal.getInstance(document.getElementById(modalId)); 
-                        modal.hide(); 
+                        modal.hide();
                         location.reload(); 
                     } else {
-                        const errorData = await response.json(); 
+                        const errorData = await response.json();
                         alert(errorData.message || 'Failed to save offer.'); 
                     }
                 } catch (error) {
-                    alert('An error occurred.'); 
+                    alert('An error occurred.');
                 } finally {
-                    submitButton.disabled = false; 
+                    submitButton.disabled = false;
                 }
             });
         }
     });
-</script>
+    </script>
 
 </body>
 </html>

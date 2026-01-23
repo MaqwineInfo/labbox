@@ -3,7 +3,6 @@
 
 <head>
     <%- include('../partials/head') %>
-    <%# Add any specific CSS for this page if needed %>
 </head>
 
 <body>
@@ -15,7 +14,6 @@
         <div class="page-content">
             <div class="container-fluid">
 
-                <!-- Page Title -->
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
@@ -24,7 +22,6 @@
                     </div>
                 </div>
 
-                <!-- Error/Success Messages -->
                 <div class="row">
                     <div class="col-12">
                         <% if (typeof error !== 'undefined' && error) { %>
@@ -36,7 +33,6 @@
                     </div>
                 </div>
 
-                <!-- Report Table and Filters -->
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
@@ -45,16 +41,13 @@
                             </div>
                             <div class="card-body">
                                 
-                                <!-- Filters and Search -->
                                 <div class="d-flex flex-wrap justify-content-between mb-3">
-                                    <!-- Search Form -->
                                     <form class="d-flex" id="searchForm" action="/admin/reports" method="GET">
                                         <input class="form-control me-2" type="search" placeholder="Search by Name" name="user" value="<%= typeof query !== 'undefined' ? query.user : '' %>">
                                         <button class="btn btn-outline-primary" type="submit">Search</button>
                                         <a href="/admin/reports" class="btn btn-outline-secondary ms-2">Clear</a>
                                     </form>
                                     
-                                    <!-- Filter Dropdown -->
                                     <div class="ms-auto">
                                         <div class="dropdown">
                                             <button class="btn btn-primary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -69,7 +62,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Table -->
                                 <div class="table-responsive">
                                     <table class="table table-striped table-hover" id="ReportTable">
                                         <thead>
@@ -86,7 +78,6 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <%# This file expects a 'reports' array from the backend %>
                                             <% if (typeof reports !== 'undefined' && reports.length > 0) { %>
                                                 <% reports.forEach(report => { %>
                                                     <tr>
@@ -113,17 +104,13 @@
                                                             <% } %>
                                                         </td>
                                                         <td>
-                                                            <%# Status from your blade file logic %>
-                                                            <% if (report.status == 5 && !report.avatar) { %>
-                                                                <span class="badge bg-warning-subtle text-warning">Pending</span>
-                                                            <% } else if (report.avatar) { %>
+                                                            <% if (report.status == 5 || report.avatar) { %>
                                                                 <span class="badge bg-success-subtle text-success">Submitted</span>
                                                             <% } else { %>
-                                                                <span class="badge bg-secondary-subtle text-secondary">Unknown</span>
+                                                                <span class="badge bg-warning-subtle text-warning">Pending</span>
                                                             <% } %>
                                                         </td>
                                                         <td>
-                                                            <%# Upload button logic %>
                                                             <% if (!report.avatar) { %>
                                                                 <button class="btn btn-sm btn-outline-success edit-report-btn" 
                                                                         data-bs-toggle="modal" 
@@ -132,7 +119,12 @@
                                                                     Upload
                                                                 </button>
                                                             <% } else { %>
-                                                                <button class="btn btn-sm btn-success" disabled>Uploaded</button>
+                                                                <button class="btn btn-sm btn-outline-primary edit-report-btn" 
+                                                                        data-bs-toggle="modal" 
+                                                                        data-bs-target="#editReportModal" 
+                                                                        data-id="<%= report.id || report._id %>">
+                                                                    Re-Upload
+                                                                </button>
                                                             <% } %>
                                                         </td>
                                                         <td>
@@ -151,32 +143,13 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <!-- Pagination (if you pass pagination data) -->
-                                <!-- <div class="d-flex justify-content-end"> ... pagination links ... </div> -->
                             </div>
                         </div>
                     </div>
                 </div>
 
-            </div> <!-- container-fluid -->
-
-            <!-- Appearance Offcanvas -->
-            <div class="offcanvas offcanvas-end" tabindex="-1" id="Appearance" aria-labelledby="AppearanceLabel">
-                <div class="offcanvas-header border-bottom justify-content-between">
-                    <h5 class="m-0 font-14" id="AppearanceLabel">Appearance</h5>
-                    <button type="button" class="btn-close text-reset p-0 m-0 align-self-center" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                </div>
-                <div class="offcanvas-body">
-                    <%# ... Appearance settings ... %>
-                </div>
-            </div>
-
+            </div> </div>
         </div>
-        <!-- end page content -->
-    </div>
-    <!-- end page-wrapper -->
-
-    <!-- Edit Report Modal (Upload) -->
     <div class="modal fade" id="editReportModal" tabindex="-1" aria-labelledby="editReportModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -185,13 +158,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <hr>
-                <form id="editReportForm" method="POST" enctype="multipart/form-data" action="/admin/report/update">
+                <form id="editReportForm" method="POST" enctype="multipart/form-data">
                     <div class="modal-body">
                         <input type="text" class="form-control" id="editReportId" name="id" hidden>
                         <div class="mb-3">
                             <label for="editReportImage" class="form-label">Report File (PDF/Image)</label>
                             <input type="file" class="form-control" id="editReportImage" name="avatar" required>
-                            <!-- Image Preview (optional, good for images) -->
+                            
                             <div class="mt-2">
                                 <img id="editReportImagePreview" src="" alt="Report Preview" style="height: 100px; width: 100px; border-radius:50%; display: none;">
                             </div>
@@ -207,7 +180,6 @@
         </div>
     </div>
     
-    <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -228,11 +200,10 @@
 
     <%- include('../partials/scripts') %>
 
-    <!-- Page Specific Scripts -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            
-            // 1. Handle Edit Modal (Upload)
+            const authToken = 'Bearer ' + localStorage.getItem('authToken');
+             
             const editReportModal = document.getElementById('editReportModal');
             const editReportForm = document.getElementById('editReportForm');
             const editReportIdInput = document.getElementById('editReportId');
@@ -243,18 +214,15 @@
                 button.addEventListener('click', function () {
                     const reportId = this.getAttribute('data-id');
                     editReportIdInput.value = reportId;
-                    
-                    // Set the form action dynamically
+                     
                     editReportForm.action = `/admin/report/update/${reportId}`;
-                    
-                    // Reset preview
+                     
                     editReportImagePreview.style.display = 'none';
                     editReportImagePreview.src = '';
-                    editReportImageInput.value = ''; // Clear file input
+                    editReportImageInput.value = ''; 
                 });
             });
-
-            // Optional: Show image preview if a file is selected
+ 
             editReportImageInput.addEventListener('change', function(event) {
                 const file = event.target.files[0];
                 if (file && file.type.startsWith('image/')) {
@@ -269,8 +237,42 @@
                     editReportImagePreview.src = '';
                 }
             });
+ 
+            editReportForm.addEventListener('submit', async function(event) {
+                event.preventDefault();  
 
-            // 2. Handle Delete Confirmation Modal
+                const submitButton = editReportForm.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+
+                const formData = new FormData(editReportForm);
+
+                try {
+                    const response = await fetch(editReportForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Authorization': authToken 
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        const modal = bootstrap.Modal.getInstance(editReportModal);
+                        modal.hide();
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to upload report.');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred.');
+                } finally {
+                    submitButton.disabled = false;
+                }
+            });
+
+            // Handle Delete Confirmation Modal
             const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
             const confirmDeleteBtn = document.getElementById('confirmDelete');
             let deleteUrl = '';
@@ -278,35 +280,30 @@
             document.querySelectorAll('.delete-report-btn').forEach(button => {
                 button.addEventListener('click', function () {
                     const reportId = this.getAttribute('data-id');
-                    // Set the URL for the delete action (adjust as needed for METHOD)
                     deleteUrl = `/admin/report/delete/${reportId}`;
                     document.getElementById('confirmationMessage').innerText = 'Are you sure you want to delete this report?';
                     deleteModal.show();
                 });
             });
 
-            // Handle the actual delete/confirmation
             confirmDeleteBtn.addEventListener('click', async function() {
                 if (deleteUrl) {
-                    // You might need to use fetch() for a DELETE request
-                    // For simplicity, we'll assume a GET or POST redirect for now
-                    // Or use a form submission
-                    
                     try {
-                        // Example using fetch for a DELETE request
                         const response = await fetch(deleteUrl, {
-                            method: 'DELETE', // or 'POST' if your server expects that
+                            method: 'DELETE',
                             headers: {
-                                // Add CSRF token header if needed
-                                // 'X-CSRF-TOKEN': '...'
+                                'Content-Type': 'application/json',
+                                'Authorization': authToken
                             }
                         });
                         
+                        const data = await response.json();
+
                         if (response.ok) {
                             deleteModal.hide();
-                            location.reload(); // Reload the page on success
+                            location.reload(); 
                         } else {
-                            alert('Failed to delete report.');
+                            alert(data.message || 'Failed to delete report.');
                             deleteModal.hide();
                         }
                     } catch (error) {
@@ -316,7 +313,6 @@
                     }
                 }
             });
-
         });
     </script>
 

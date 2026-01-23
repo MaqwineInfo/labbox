@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-startbar="dark" data-bs-theme="light">
+
+<head>
+    <%- include('../partials/head') %>
+    <style>
+        .detail-label {
+            font-weight: 600;
+            color: #6c757d;
+        }
+        .detail-value {
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        .section-title {
+            border-bottom: 1px solid #eef2f7;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <%- include('../partials/topbar') %>
+    <%- include('../partials/sidebar') %>
+
+    <div class="page-wrapper">
+        <div class="page-content">
+            <div class="container-fluid">
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
+                            <h4 class="page-title">Package Details: <%= pkg.name %></h4>
+                            <a href="/admin/packages" class="btn btn-sm btn-outline-secondary">
+                                <i class="iconoir-arrow-left"></i> Back to List
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-4 col-lg-5">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <img src="<%= pkg.avatar || 'https://placehold.co/150x150/eee/31343c?text=No+Img' %>" 
+                                     alt="<%= pkg.name %>" 
+                                     class="rounded-circle img-thumbnail mb-3" 
+                                     style="width: 150px; height: 150px; object-fit: cover;">
+                                
+                                <h4 class="mb-1"><%= pkg.name %></h4>
+                                <p class="text-muted"><%= pkg.short_desc || 'No short description' %></p>
+                                
+                                <div class="mt-3">
+                                    <% if (pkg.status == 1) { %>
+                                        <span class="badge bg-success-subtle text-success fs-12">Active</span>
+                                    <% } else { %>
+                                        <span class="badge bg-danger-subtle text-danger fs-12">Inactive</span>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="card-body border-top">
+                                <div class="row">
+                                    <div class="col-6 text-center border-end">
+                                        <h5 class="mb-1">₹<%= pkg.dis_price %></h5>
+                                        <p class="text-muted mb-0">Discount Price</p>
+                                    </div>
+                                    <div class="col-6 text-center">
+                                        <h5 class="mb-1 text-decoration-line-through text-muted">₹<%= pkg.mrp %></h5>
+                                        <p class="text-muted mb-0">MRP</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">Configuration</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p class="detail-label">Categories</p>
+                                        <p class="detail-value">
+                                            <% if (pkg.categories_id && pkg.categories_id.length > 0) { %>
+                                                <% pkg.categories_id.forEach(cat => { %>
+                                                    <span class="badge bg-primary-subtle text-primary"><%= cat.name %></span>
+                                                <% }) %>
+                                            <% } else { %>
+                                                N/A
+                                            <% } %>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="detail-label">Sample Type</p>
+                                        <p class="detail-value"><%= pkg.sample_type || 'N/A' %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="detail-label">Fasting</p>
+                                        <p class="detail-value"><%= pkg.fasting || 'N/A' %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="detail-label">Report In</p>
+                                        <p class="detail-value"><%= pkg.report_in || 'N/A' %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="detail-label">Rec. Age</p>
+                                        <p class="detail-value"><%= pkg.recommended_age || 'N/A' %></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="detail-label">Rec. Gender</p>
+                                        <p class="detail-value">
+                                            <%= (pkg.recommended_gender === 0) ? 'Female' : (pkg.recommended_gender === 1) ? 'Male' : 'Both' %>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-8 col-lg-7">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">Details & Instructions</h4>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="detail-label">Long Description</h6>
+                                <p class="text-muted"><%= pkg.long_desc || 'No description provided.' %></p>
+                                <hr>
+                                <h6 class="detail-label">Package Instructions</h6>
+                                <p class="text-muted"><%= pkg.package_instruction || 'No instructions provided.' %></p>
+                                <hr>
+                                <h6 class="detail-label">Who is it for?</h6>
+                                <p class="text-muted"><%= pkg.for_what || 'N/A' %></p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="benefits-tab" data-bs-toggle="tab" data-bs-target="#benefits" type="button" role="tab">Benefits</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="criteria-tab" data-bs-toggle="tab" data-bs-target="#criteria" type="button" role="tab">Criteria</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="qanda-tab" data-bs-toggle="tab" data-bs-target="#qanda" type="button" role="tab">Q&A</button>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="card-body">
+                                <div class="tab-content" id="myTabContent">
+                                    
+                                    <div class="tab-pane fade show active" id="benefits" role="tabpanel">
+                                        <% if (benefits && benefits.length > 0) { %>
+                                            <ul class="list-group list-group-flush">
+                                                <% benefits.forEach(item => { %>
+                                                    <li class="list-group-item d-flex align-items-center">
+                                                        <% if(item.avatar) { %>
+                                                            <img src="<%= item.avatar %>" class="me-2 rounded" width="30" height="30" alt="icon">
+                                                        <% } else { %>
+                                                            <i class="iconoir-check-circle me-2 text-success"></i>
+                                                        <% } %>
+                                                        <%= item.text %>
+                                                    </li>
+                                                <% }) %>
+                                            </ul>
+                                        <% } else { %>
+                                            <p class="text-muted text-center my-3">No Benefits added.</p>
+                                        <% } %>
+                                    </div>
+
+                                    <div class="tab-pane fade" id="criteria" role="tabpanel">
+                                        <% if (criteria && criteria.length > 0) { %>
+                                            <ul class="list-group list-group-flush">
+                                                <% criteria.forEach(item => { %>
+                                                    <li class="list-group-item d-flex align-items-center">
+                                                        <% if(item.avatar) { %>
+                                                            <img src="<%= item.avatar %>" class="me-2 rounded" width="30" height="30" alt="icon">
+                                                        <% } else { %>
+                                                            <i class="iconoir-info-circle me-2 text-info"></i>
+                                                        <% } %>
+                                                        <%= item.text %>
+                                                    </li>
+                                                <% }) %>
+                                            </ul>
+                                        <% } else { %>
+                                            <p class="text-muted text-center my-3">No Criteria added.</p>
+                                        <% } %>
+                                    </div>
+
+                                    <div class="tab-pane fade" id="qanda" role="tabpanel">
+                                        <% if (qanda && qanda.length > 0) { %>
+                                            <div class="accordion" id="accordionQna">
+                                                <% qanda.forEach((item, index) => { %>
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header" id="heading<%= index %>">
+                                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>">
+                                                                <%= item.question %>
+                                                            </button>
+                                                        </h2>
+                                                        <div id="collapse<%= index %>" class="accordion-collapse collapse" data-bs-parent="#accordionQna">
+                                                            <div class="accordion-body text-muted">
+                                                                <%= item.answer %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                <% }) %>
+                                            </div>
+                                        <% } else { %>
+                                            <p class="text-muted text-center my-3">No Q&A added.</p>
+                                        <% } %>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div> 
+        </div>
+    </div>
+
+    <%- include('../partials/scripts') %>
+</body>
+</html>
